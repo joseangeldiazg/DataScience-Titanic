@@ -9,6 +9,7 @@ son los valores perdidos, sobre esta cuestion será la primera que trabajaremos.
 #Cargamos el dataset y asignamos un valor concreto a los valores perdidos
 
 titanic <- read.csv("/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLearning_Disaster_TID/dataset/train.csv", header = T, na.strings=c(""))
+titanicTest <- read.csv("/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLearning_Disaster_TID/dataset/test.csv", header = T, na.strings=c(""))
 
 #Mostramos los datos, podemos comprobar como los vacios salen marcados como NA
 
@@ -40,11 +41,12 @@ seleccionar solo algunas, a priori, eliminamremos las que sabemos a ciencia cier
 que no sirven para nada. Vemos claramente que:
   
   -PassengerId es solo un id, pues su variabilidad coincide con el numero de muestras en el dataset.
+  -Con el nombre sucede exactamente lo mismo. 
   -Cabin es clara candidata a ser eliminada pues su cantidad de valores perdidos la hacen inservible.
   -Ticket es el número de ticket por lo que tampoco es relevante por lo que las eliminaremos."
 
 
-titanic2 <- titanic[,-c(1, 9, 11)]
+titanic2 <- titanic[,-c(1,4, 9, 11)]
 head(titanic2)
 
 
@@ -61,19 +63,13 @@ titanic2 <- titanic2[!is.na(titanic2$Embarked),]
 rownames(titanic2) <- NULL
 
 
-##Podemos obtener los scatter para hacernos una idea y ver por donde atacar.
 
-pairs(titanic2)
+#Entrenamos el modelo
 
-##Parece que la clase puede ser un factor importante
+model <- glm(Survived ~.,family=binomial(link='logit'),data=titanic2)
 
-modelo=Pclass~Survived
-regre=lm(modelo,titanic2)
-summary(regre)
+summary(model)
 
-##Comprobemos con el precio del ticket
+#Aplicamos el test anova 
 
-modelo2=Fare~Survived
-regre2=lm(modelo,titanic2)
-summary(regre2)
-
+anova(model, test="Chisq")
