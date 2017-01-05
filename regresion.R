@@ -74,7 +74,3 @@ summary(model)
 
 anova(model, test="Chisq")
 
-
-#Vamos a ver los que sobreviven 
-
-table(titanic2$Survived)
