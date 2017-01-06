@@ -62,8 +62,37 @@ aggregate(Survived ~ Child + Sex, data=titanic2, FUN=sum)
 aggregate(Survived ~ Child + Sex, data=titanic2, FUN=function(x) {sum(x)/length(x)})
 
 "Podemos comprobar como ahora, casi el 57% de los menores de 14 años hombres sobreviven, 
-lo que puede ser una ligera mejora en nuestros resultados."
+lo que puede ser una ligera mejora en nuestros resultados. Nos guardamos por tanto este
+valor (14 años) como corte. Pero de momento la edad no nos aporta mucho."
+
+"*******************************************************************************"
+
+"Vamos a estudiar el comportamiento de otras variables importantes, la clase que el test
+de regresion nos dijo que era muy importante y el precio del ticket que sin duda está ligado
+a la clase"
+
+"De nuevo estamos ante un problema ya que la clase puede tener tres valores, pero fare es una
+variable continua que poco nos aporta, por lo que podemos reducirla a tres valores facilmente
+manejables"
+
+titanic2$Fare2 <- '30+'
+titanic2$Fare2[titanic2$Fare < 30 & titanic2$Fare >= 20] <- '20-30'
+titanic2$Fare2[titanic2$Fare < 20 & titanic2$Fare >= 10] <- '10-20'
+titanic2$Fare2[titanic2$Fare < 10] <- '<10'
 
 
+"Ahora vamos a estudiar las proporciones para cada variable"
 
+aggregate(Survived ~ Fare2 + Pclass + Sex, data=titanic2, FUN=function(x) {sum(x)/length(x)})
+
+
+"Obtenemos por tanto dos puntos clave, referidos a las mujeres en 3 clase con tickets
+de mas de 20$, que con casi toda probabilidad perecen en el accidente. En base a esto,
+podemos hacer una nueva predicción."
+
+#SEGUNDO MODELO ACCURACY 0.77990
+
+"**************************************************************************************"
+
+aggregate(Survived ~ Child + Fare2 + Pclass + Sex, data=titanic2, FUN=function(x) {sum(x)/length(x)})
 
