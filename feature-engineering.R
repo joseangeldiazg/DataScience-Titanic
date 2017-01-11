@@ -151,7 +151,31 @@ submit <- data.frame(PassengerId = test$PassengerId, Survived = Prediction)
 write.csv(submit, file = "/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLearning_Disaster_TID/output/finalFeatureEngienering.csv", row.names = FALSE)
 
 
-"Parece que aún no mejoramos nuestro modelo por lo que pasaremos usar emsembles en arboles de decisión."
+"Parece que aún no mejoramos nuestro modelo por lo que vamos a añadir una ultima variable para ver como se comporta:"
+
+summary(combi$Age)
+
+combi$CategoryAge[combi$Age<=3]<-"Bebe"
+combi$CategoryAge[combi$Age>3 & combi$Age <=14]<-"Niño"
+combi$CategoryAge[combi$Age >14]<-"Adulto"
+
+combi$CategoryAge <- factor(combi$CategoryAge)
+
+summary(combi$CategoryAge)
+
+train <- combi[1:891,]
+test <- combi[892:1309,]
 
 
+fit <- rpart(Survived ~ Pclass + Sex  + SibSp + Parch + Fare + Embarked + Title + FamilySize + FamilyID + CategoryAge,
+             data=train, 
+             method="class")
 
+Prediction <- predict(fit, test, type = "class")
+
+submit <- data.frame(PassengerId = test$PassengerId, Survived = Prediction)
+
+write.csv(submit, file = "/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLearning_Disaster_TID/output/finalFeatureEngienering2.csv", row.names = FALSE)
+
+
+"No mejoramos por lo que de momento tendremos que "
