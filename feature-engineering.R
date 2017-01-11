@@ -155,19 +155,21 @@ write.csv(submit, file = "/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLea
 
 summary(combi$Age)
 
-combi$CategoryAge[combi$Age<=3]<-"Bebe"
-combi$CategoryAge[combi$Age>3 & combi$Age <=14]<-"Niño"
-combi$CategoryAge[combi$Age >14]<-"Adulto"
 
-combi$CategoryAge <- factor(combi$CategoryAge)
+combi$CategoryAge2[combi$Age<=3]<-"Bebe"
+combi$CategoryAge2[combi$Age>3 & combi$Age <=14]<-"Niño"
+combi$CategoryAge2[combi$Age >14 & combi$Age <= 60]<-"Adulto"
+combi$CategoryAge2[combi$Age > 60]<-"Anciano"
 
-summary(combi$CategoryAge)
+combi$CategoryAge2 <- factor(combi$CategoryAge2)
+
+summary(combi$CategoryAge2)
 
 train <- combi[1:891,]
 test <- combi[892:1309,]
 
 
-fit <- rpart(Survived ~ Pclass + Sex  + SibSp + Parch + Fare + Embarked + Title + FamilySize + FamilyID + CategoryAge,
+fit <- rpart(Survived ~ Pclass + Sex  + SibSp + Parch + Fare + Embarked + Title + CategoryAge2,
              data=train, 
              method="class")
 
