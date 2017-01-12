@@ -15,6 +15,36 @@ titanicTest <- read.csv("/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLear
 
 head(titanic)
 
+
+#Vamos a ver también las distrinuciones de las variables gráficamente:
+
+barplot(table(titanic$Survived),
+        names.arg = c("Murio", "Vivio"),
+        main="Survived", col="black")
+
+barplot(table(titanic$Pclass), 
+        names.arg = c("Primera", "Segunda", "Tercera"),
+        main="Pclass (clase del viajero)", col="firebrick")
+
+barplot(table(titanic$Sex),
+        names.arg = c("Mujer", "Hombre"),
+        main="Sex (genero)", col="darkviolet")
+
+hist(titanic$Age, main="Age", xlab = NULL, col="brown")
+
+barplot(table(titanic$SibSp), main="SibSp (hijos y esposa a bordo)", 
+        col="darkblue")
+
+barplot(table(titanic$Parch), main="Parch (Padres e hijos abordo)", 
+        col="gray50")
+
+hist(titanic$Fare, main="Fare (Precio del ticket)", xlab = NULL, 
+     col="darkgreen")
+
+barplot(table(titanic$Embarked), 
+        names.arg = c("Cherbourg", "Queenstown", "Southampton"),
+        main="Embarked (Lugar donde embarcó)", col="sienna")  
+
 #Vamos a ver la distribución de los missing values y la variabilidad de las variables para entender mejor los datos. 
 
 sapply(titanic,function(x) sum(is.na(x)))
