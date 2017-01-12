@@ -179,5 +179,3 @@ submit <- data.frame(PassengerId = test$PassengerId, Survived = Prediction)
 
 write.csv(submit, file = "/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLearning_Disaster_TID/output/finalFeatureEngienering2.csv", row.names = FALSE)
 
-
-"No mejoramos por lo que de momento tendremos que "
