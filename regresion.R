@@ -6,17 +6,16 @@ Tener datos limpios y de buena calidad es un factor importante antes de comenzar
 trabajar con nuestro data set. Uno de los principales problemas a descubrir y solventar
 son los valores perdidos, sobre esta cuestion será la primera que trabajaremos."
 
+
+install.packages("Amelia")
+library(Amelia)
+
 #Cargamos el dataset y asignamos un valor concreto a los valores perdidos
 
 titanic <- read.csv("/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLearning_Disaster_TID/dataset/train.csv", header = T, na.strings=c(""))
 titanicTest <- read.csv("/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLearning_Disaster_TID/dataset/test.csv", header = T, na.strings=c(""))
 
-#Mostramos los datos, podemos comprobar como los vacios salen marcados como NA
-
-head(titanic)
-
-
-#Vamos a ver también las distrinuciones de las variables gráficamente:
+#Vamos a ver las distrinuciones de las variables gráficamente:
 
 barplot(table(titanic$Survived),
         names.arg = c("Murio", "Vivio"),
@@ -45,14 +44,47 @@ barplot(table(titanic$Embarked),
         names.arg = c("Cherbourg", "Queenstown", "Southampton"),
         main="Embarked (Lugar donde embarcó)", col="sienna")  
 
+
+
+#Sería más interesante verlas de manera doble para ello podemos usar:
+
+mosaicplot(titanic$Pclass ~ titanic$Survived, 
+           main="Passenger Fate by Traveling Class", shade=FALSE, 
+           color=TRUE, xlab="Pclass", ylab="Survived")
+
+#Con la clase podremos afinar poco nuestro modelo... vamos a probar con Sex.
+
+mosaicplot(titanic$Sex ~ titanic$Survived, 
+           main="Passenger Fate by Traveling Class", shade=FALSE, 
+           color=TRUE, xlab="Sex", ylab="Survived")
+
+
+#Parece que tenemos un ganador... en base a Sex podremos hacer nuestra primera predicció
+#Salvando a todas las mujeres y asignando que no sobreviven a todos los hombres. 
+#Vamos a ver con otras variales, quiza con Embarked podramos obtener donde montó la 
+#Trpulacion y afinar en que estas personas murieron dado que solo se puso a salvo 
+#A los pasajeros
+
+
+mosaicplot(titanic$Embarked ~ titanic$Survived, 
+           main="Passenger Fate by Traveling Class", shade=FALSE, 
+           color=TRUE, xlab="Embarked", ylab="Survived")
+
+#Embarked ofrece poco... pero vamos a ver que pasa con Cabin por ejemplo:
+
+mosaicplot(titanic$Cabin ~ titanic$Survived, 
+           main="Passenger Fate by Traveling Class", shade=FALSE, 
+           color=TRUE, xlab="Cabin", ylab="Survived")
+
+#Lo que ocurre en este cuadro se llama valores perdidos, y debemos arreglarlos para poder 
+#Seguir trabajando con el data set correctamente. 
+
 #Vamos a ver la distribución de los missing values y la variabilidad de las variables para entender mejor los datos. 
 
 sapply(titanic,function(x) sum(is.na(x)))
 
 #También podemos visualizarlo gráficamente
 
-install.packages("Amelia")
-library(Amelia)
 missmap(titanic, main = "Missing values vs observed")
 
 "Vemos como hay 177 con la edad perdida, 687 con la cabina vacia y 2 con el embarque.

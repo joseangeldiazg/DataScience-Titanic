@@ -160,4 +160,3 @@ submit <- data.frame(PassengerId = test$PassengerId, Survived = Prediction)
 write.csv(submit, file = "/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLearning_Disaster_TID/output/randomforest5.csv", row.names = FALSE)
 
 #ACCURACY: 0.81340
-

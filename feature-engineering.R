@@ -1,8 +1,8 @@
-
 library(rattle)
 library(rpart.plot)
 library(RColorBrewer)
 library(rpart)
+library(stats)
 
 
 "En nuestro primer script eliminamos la variable nombre al ser esta un identificador 
