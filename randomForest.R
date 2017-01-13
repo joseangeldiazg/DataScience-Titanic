@@ -59,8 +59,6 @@ test <- combi[892:1309,]
 
 
 "Ya tenemos los datos tratados por lo que podremos ejecutar nuestro random forest"
-
-install.packages('randomForest')
 library(randomForest)
 
 
@@ -72,19 +70,20 @@ set.seed(12345)
 
 
 fit <- randomForest(as.factor(Survived) ~ Pclass + Sex + Age + SibSp + Parch + Fare +
-                      Embarked + Title + FamilySize + FamilyID2+ CategoryAge2,
+                      Embarked + Title + FamilySize+ CategoryAge2,
                     data=train, 
                     importance=TRUE, 
                     ntree=2000)
 
 varImpPlot(fit)
 
-
 Prediction <- predict(fit, test)
+
 
 submit <- data.frame(PassengerId = test$PassengerId, Survived = Prediction)
 
 write.csv(submit, file = "/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLearning_Disaster_TID/output/randomforest1.csv", row.names = FALSE)
+
 
 
 "No mejoramos por lo que vamos a crear un Ramdom Forest que peuda aceptar atributos de 

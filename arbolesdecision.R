@@ -1,9 +1,5 @@
 "En el anterior script obteniamos maualmente las reglas para asignar a ciertos grupos
 de población la clase buscada. Esto podemos hacerlo mecanicamente con un árbol de decision"
-
-install.packages('rattle')
-install.packages('rpart.plot')
-install.packages('RColorBrewer')
 library(rattle)
 library(rpart.plot)
 library(RColorBrewer)

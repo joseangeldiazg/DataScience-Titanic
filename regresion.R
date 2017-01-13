@@ -6,8 +6,6 @@ Tener datos limpios y de buena calidad es un factor importante antes de comenzar
 trabajar con nuestro data set. Uno de los principales problemas a descubrir y solventar
 son los valores perdidos, sobre esta cuestion será la primera que trabajaremos."
 
-
-install.packages("Amelia")
 library(Amelia)
 
 #Cargamos el dataset y asignamos un valor concreto a los valores perdidos
@@ -86,6 +84,11 @@ sapply(titanic,function(x) sum(is.na(x)))
 #También podemos visualizarlo gráficamente
 
 missmap(titanic, main = "Missing values vs observed")
+
+titanic$Age[is.na(titanic$Age)] <- mean(titanic$Age,na.rm=T)
+titanic$Embarked[c(62,830)] = "S"
+titanic$Embarked <- factor(titanic$Embarked)
+
 
 "Vemos como hay 177 con la edad perdida, 687 con la cabina vacia y 2 con el embarque.
 Estos puntos ya son útiles, ya que aplicando simple lógica podemos ver que los valores perdidos
