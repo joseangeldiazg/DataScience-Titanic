@@ -1,5 +1,10 @@
-"En el anterior script obteniamos maualmente las reglas para asignar a ciertos grupos
-de población la clase buscada. Esto podemos hacerlo mecanicamente con un árbol de decision"
+
+
+"En el anterior script obteniamos maualmente las reglas para asignar
+a ciertos grupos de población la clase buscada. Esto podemos hacerlo
+mecanicamente con un árbol de decisión"
+
+
 library(rattle)
 library(rpart.plot)
 library(RColorBrewer)
@@ -18,7 +23,6 @@ text(fit)
 fancyRpartPlot(fit)
 
 
-
 "En base a este algoritmo vamos a hacer una predicción."
 
 Prediction <- predict(fit, titanicTest, type = "class")
@@ -30,7 +34,7 @@ write.csv(submit, file = "/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLea
 #ACCURACY 0.77033
 
 "Parece que no mejora nuestro modelo manual, por lo que vamos a dejar solo
-las variables que nuestro proceso de seleccion de variables nos dijo que
+las variables que nuestro proceso de selección de variables nos dijo que
 era imporante"
 
 fit <- rpart(Survived ~ Pclass + Sex + Age + SibSp + Fare,

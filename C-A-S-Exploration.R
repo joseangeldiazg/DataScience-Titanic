@@ -27,7 +27,7 @@ test$Survived[test$Sex == 'female'] <- 1
 #PRIMER MODELO ACCURACY: 0.76555
 
 
-"*************************************************************************************"
+"*****************************************************************************"
 
 "Vamos ahora a indagar en la variable edad, recordemos que esta ya tratada y con sus 
 valores perdidos tratados."
@@ -66,7 +66,7 @@ sobreviven, lo que puede ser una ligera mejora en nuestros resultados. Nos
 guardamos por tanto este valor (14 años) como corte. Pero de momento la edad
 no nos aporta mucho."
 
-"*******************************************************************************"
+"*************************************************************************"
 
 "Vamos a estudiar el comportamiento de otras variables importantes, la clase
 que el testde regresión nos dijo que era muy importante y el precio del
@@ -92,7 +92,7 @@ en el accidente. En base a esto, podemos hacer una nueva predicción."
 
 #SEGUNDO MODELO ACCURACY 0.77990
 
-"**************************************************************************************"
+"*************************************************************************"
 
 "¿Que pasaría si metemos la variable edad anteriormente estudiada 
 en nuestro modelo?"
