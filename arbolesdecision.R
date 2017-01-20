@@ -29,8 +29,9 @@ write.csv(submit, file = "/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLea
 
 #ACCURACY 0.77033
 
-"Parece que no mejora nuestro modelo manual, por lo que vamos a dejar solo las variables
-que nuestro proceso de seleccion de variables nos dijo que era imporante"
+"Parece que no mejora nuestro modelo manual, por lo que vamos a dejar solo
+las variables que nuestro proceso de seleccion de variables nos dijo que
+era imporante"
 
 fit <- rpart(Survived ~ Pclass + Sex + Age + SibSp + Fare,
              data=titanic2,
@@ -42,7 +43,8 @@ submit <- data.frame(PassengerId = titanicTest$PassengerId, Survived = Predictio
 
 write.csv(submit, file = "/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLearning_Disaster_TID/output/arbol2.csv", row.names = FALSE)
 
-"Mejoramos pero como podemos ver aún no es lo suficiente para aumentar la precisión de nuestro anterior modelo."
+"Mejoramos pero como podemos ver aún no es lo suficiente para aumentar
+la precisión de nuestro anterior modelo."
 
 #ACCURACY 0.77990
 

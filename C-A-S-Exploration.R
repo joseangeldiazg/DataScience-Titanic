@@ -71,7 +71,7 @@ no nos aporta mucho."
 "Vamos a estudiar el comportamiento de otras variables importantes, la clase
 que el testde regresión nos dijo que era muy importante y el precio del
 ticket que sin duda está ligado a la clase. De nuevo estamos ante un problema
-ya que la clase puede tener tres valores, pero fare es una variable continua
+ya que la clase puede tener tres valores, pero Fare es una variable continua
 que poco nos aporta, por lo que podemos reducirla a tres valores facilmente
 manejables"
 
@@ -87,7 +87,7 @@ aggregate(Survived ~ Fare2 + Pclass + Sex, data=titanic2, FUN=function(x) {sum(x
 
 
 "Obtenemos por tanto dos puntos clave, referidos a las mujeres en tercera
-clase con ticketsde mas de 20$, que con casi toda probabilidad perecen
+clase con ticketsde más de 20$, que con casi toda probabilidad perecen
 en el accidente. En base a esto, podemos hacer una nueva predicción."
 
 #SEGUNDO MODELO ACCURACY 0.77990
@@ -100,7 +100,7 @@ en nuestro modelo?"
 aggregate(Survived ~ Child + Fare2 + Pclass + Sex, data=titanic2, FUN=function(x) {sum(x)/length(x)})
 
 
-"Aunque parececia que anteriormente no nos ofrecería mejores resultados,
+"Aunque parecía que anteriormente no nos ofrecería mejores resultados,
 ahora hemos conseguido 'salvar' algunos hombres al fin, por lo que nuestro
 modelo nos ofrece ya mejores resultados."
 
