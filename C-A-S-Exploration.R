@@ -72,7 +72,7 @@ no nos aporta mucho."
 que el testde regresión nos dijo que era muy importante y el precio del
 ticket que sin duda está ligado a la clase. De nuevo estamos ante un problema
 ya que la clase puede tener tres valores, pero Fare es una variable continua
-que poco nos aporta, por lo que podemos reducirla a tres valores facilmente
+que poco nos aporta, por lo que podemos reducirla a tres valores fácilmente
 manejables"
 
 titanic2$Fare2 <- '30+'

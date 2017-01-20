@@ -1,4 +1,4 @@
-#Análisis exploratorio (seleccion de características) y regresión logística
+#Análisis exploratorio (selección de características) y regresión logística
 
 "Primero haremos una limpieza y estudio exploratorio de los datos de los datos. 
 
@@ -89,10 +89,10 @@ titanic$Embarked[c(62,830)] = "S"
 titanic$Embarked <- factor(titanic$Embarked)
 
 
-"Vemos como hay 177 con la edad perdida, 687 con la cabina vacia y
+"Vemos como hay 177 con la edad perdida, 687 con la cabina vacía y
 2 con el embarque. Estos puntos ya son útiles, ya que aplicando simple
 lógica podemos ver que los valores perdidos en la edad serán un factor
-importante y decisivo ya que acorde a datos historicos en el titanic
+importante y decisivo ya que acorde a datos históricos en el titanic
 niños y mujeres tuvieron preferencia en el acceso a los botes."
 
 #Vamos a estudiar la variabilidad
@@ -100,7 +100,7 @@ niños y mujeres tuvieron preferencia en el acceso a los botes."
 sapply(titanic, function(x) length(unique(x)))
 
 "Directamente vemos que tenemos muchas variables que no nos sirven por
-lo que podemos seleccionar solo algunas, a priori, eliminamremos
+lo que podemos seleccionar solo algunas, a priori, eliminaremos
 las que sabemos a ciencia cierta que no sirven para nada. 
 Vemos claramente que:
   

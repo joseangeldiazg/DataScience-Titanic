@@ -1,24 +1,28 @@
-"Vamos a trabajar con RandomForest. Este es un ensemble de arboles de decision. Los ensembles
-funcionan por votaciones, es decir, se generan arboles de decisión para distintas variables
-y ante un ejemplo concreto si hay tres arboles que lo barajan y 2 dicen que sobrevive se tomará 
-como que este ejemplo sobrevive. Los RandomForest tienen una ventaja y es que evitan el problema
-del sobreentrenamiento. Esto lo consiguen añadiendo aleatoriedad al conjunto de la sigueinte manera:
 
-  -Bagging: Mediante el bagging lo que generamos es que los arboles se generan con conjuntos
-de muestras aleatorias en cada vez. Podemos estimar que se dejan fuera un 37% de las muestras 
-y que algunas seran incluso repetidas.
+"Vamos a trabajar con RandomForest. Este es un ensemble de arboles de decisión.
+Los ensembles funcionan por votaciones, es decir, se generan arboles de decisión
+para distintas variables y ante un ejemplo concreto si hay tres arboles que lo 
+barajan y 2 dicen que sobrevive se tomará como que este ejemplo sobrevive. Los
+RandomForest tienen una ventaja y es que evitan el problema del sobreentrenamiento.
+Esto lo consiguen añadiendo aleatoriedad al conjunto de la sigueinte manera:
 
-  -Seleccion de variables: Los arboles generados van cambiando las variables que toman para predecir."
+  -Bagging: Mediante el bagging lo que generamos es que los arboles se generan
+con conjuntos de muestras aleatorias en cada vez. Podemos estimar que se dejan
+fuera un 37% de las muestras y que algunas serán incluso repetidas.
+
+  -Selección de variables: Los árboles generados van cambiando las variables
+que toman para predecir."
 
 
 library(randomForest)
 
 
 
-"RandomForest no trabaja con elementos con missing values, por lo que vamos a trabajar con el data set
-que ya solventamos este problema. Para ello, en lugar de aplicar las transformaciones que vimos 
-anteriormente a todo el dataset titanic2, lo que haremos será sobre el combiandao aplicar la funcion 
-media"
+"RandomForest no trabaja con elementos con missing values, por lo que
+vamos a trabajar con el data set que ya solventamos este problema.
+Para ello, en lugar de aplicar las transformaciones que vimos 
+anteriormente a todo el dataset titanic2, lo que haremos será sobre
+el combinado aplicar la función media"
 
 combi$Age[is.na(combi$Age)] <- mean(combi$Age,na.rm=T)
 
@@ -31,8 +35,8 @@ summary(combi$CategoryAge2)
 summary(combi$Fare)
 summary(combi$Embarked)
 
-"Vamos arreglarlas. Como son pocas, con el comando which podemos obtener donde están y 
-arreglarlas a mano:"
+"Vamos arreglarlas. Como son pocas, con el comando which podemos obtener
+donde están y  arreglarlas a mano:"
 
 which(is.na(combi$Fare))
 which(combi$Embarked == '')
@@ -85,8 +89,11 @@ submit <- data.frame(PassengerId = test$PassengerId, Survived = Prediction)
 write.csv(submit, file = "/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLearning_Disaster_TID/output/randomforest1.csv", row.names = FALSE)
 
 
+"***********************************************************************************"
+
+
 "No mejoramos por lo que vamos a crear un Ramdom Forest que pueda aceptar
-atributos demayor calado para obtener mejores resultados"
+atributos de mayor calado para obtener mejores resultados"
 
 install.packages('party')
 library(party)
@@ -110,7 +117,7 @@ write.csv(submit, file = "/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLea
 "********************************************************************************"
 
 "Vamos a comprobar si mejora eligiendo las variables que hemos usado en nuestro
-proceso de seleccion de variables"
+proceso de selección de variables"
 
 
 set.seed(12345)
@@ -127,10 +134,12 @@ write.csv(submit, file = "/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLea
 
 
 
-"Parece que nuestras variables tamporo ayudan mucho, pero tenemos
+"Parece que nuestras variables tampoco ayudan mucho, pero tenemos
 el gran problema de la edad... que tenía muchos valores perdidos,
 vamos a probar si en lugar de asignar a todos la media, hacemos
-una prediccion de la edad con los distintos valores."
+una predicción de la edad con los distintos valores. Antes de hacer
+la predicción realizaremos en Knime una regresion logística sobre
+Age, para comprobar que variables sob mejores para predecir esta."
 
 Agefit <- rpart(Age ~ Pclass + Sex + SibSp + Parch + Fare + Embarked + Title + FamilySize,
                 data=combi[!is.na(combi$Age),], 
@@ -144,9 +153,9 @@ test <- combi[892:1309,]
 summary(combi$Age)
 
 "También eliminaremos de nuestro modelo la variable categórica de edad, ya que 
-parece que con la edad predicha podremos ajustar aun más que con esta variable."
+parece que con la edad predicha podremos ajustar aún más que con esta variable."
 
-set.seed(415)
+set.seed(12345)
 fit <- cforest(as.factor(Survived) ~ Pclass + Sex + Age + SibSp + Parch + Fare +
                  Embarked + Title + FamilySize + FamilyID,
                data = train, 
