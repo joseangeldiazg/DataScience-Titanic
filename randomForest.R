@@ -11,6 +11,9 @@ y que algunas seran incluso repetidas.
   -Seleccion de variables: Los arboles generados van cambiando las variables que toman para predecir."
 
 
+library(randomForest)
+
+
 
 "RandomForest no trabaja con elementos con missing values, por lo que vamos a trabajar con el data set
 que ya solventamos este problema. Para ello, en lugar de aplicar las transformaciones que vimos 
@@ -41,8 +44,9 @@ combi$Embarked <- factor(combi$Embarked)
 combi$Fare[1044] <- median(combi$Fare, na.rm=TRUE)
 
 
-"Por otro lado, el ramdomforest de R no admite factores con más de 32 valores, por lo que vamos 
-aumentar el rango de nuestra familyId a 3 para ser consideradas pequeñas."
+"Por otro lado, el ramdomforest de R no admite factores con más de 32 valores,
+por lo que vamos aumentar el rango de nuestra familyId a 3 para ser consideradas
+pequeñas."
 
 
 combi$FamilyID2 <- combi$FamilyID
@@ -58,13 +62,9 @@ train <- combi[1:891,]
 test <- combi[892:1309,]
 
 
-"Ya tenemos los datos tratados por lo que podremos ejecutar nuestro random forest"
-library(randomForest)
-
-
-
-
-"Para poder reproducir los experimentos hay que establecer una semilla para la aleatoridad"
+"Ya tenemos los datos tratados por lo que podremos ejecutar nuestro
+RandomForest para poder reproducir los experimentos hay que establecer
+una semilla para la aleatoridad"
 
 set.seed(12345)
 
@@ -85,9 +85,8 @@ submit <- data.frame(PassengerId = test$PassengerId, Survived = Prediction)
 write.csv(submit, file = "/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLearning_Disaster_TID/output/randomforest1.csv", row.names = FALSE)
 
 
-
-"No mejoramos por lo que vamos a crear un Ramdom Forest que peuda aceptar atributos de 
-mayor calado para obtener mejores resultados"
+"No mejoramos por lo que vamos a crear un Ramdom Forest que pueda aceptar
+atributos demayor calado para obtener mejores resultados"
 
 install.packages('party')
 library(party)
@@ -110,8 +109,8 @@ write.csv(submit, file = "/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLea
 
 "********************************************************************************"
 
-"Vamos a comprobar si mejora elegiendo las variables que hemos usado en nuestro proceso 
-de seleccion de variables"
+"Vamos a comprobar si mejora eligiendo las variables que hemos usado en nuestro
+proceso de seleccion de variables"
 
 
 set.seed(12345)
@@ -128,9 +127,10 @@ write.csv(submit, file = "/Users/joseadiazg/Documents/Knime-WorkSpace/MachineLea
 
 
 
-"Parece que nuestras variables tamporo ayudan mucho, pero tenemos el gran problema de la edad...
-que tenía muchos valores perdidos, vamos a probar si en lugar de asignar a todos la media, 
-hacemos una prediccion de la edad con los distintos valores."
+"Parece que nuestras variables tamporo ayudan mucho, pero tenemos
+el gran problema de la edad... que tenía muchos valores perdidos,
+vamos a probar si en lugar de asignar a todos la media, hacemos
+una prediccion de la edad con los distintos valores."
 
 Agefit <- rpart(Age ~ Pclass + Sex + SibSp + Parch + Fare + Embarked + Title + FamilySize,
                 data=combi[!is.na(combi$Age),], 
@@ -143,8 +143,8 @@ test <- combi[892:1309,]
 
 summary(combi$Age)
 
-"Tambien eliminaremos de nuestro modelo la vriable categorica de edad, ya que 
-parece que con la edad predicha podremos ajustar aun mas que con esta variable."
+"También eliminaremos de nuestro modelo la variable categórica de edad, ya que 
+parece que con la edad predicha podremos ajustar aun más que con esta variable."
 
 set.seed(415)
 fit <- cforest(as.factor(Survived) ~ Pclass + Sex + Age + SibSp + Parch + Fare +
