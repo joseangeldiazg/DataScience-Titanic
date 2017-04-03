@@ -53,7 +53,6 @@ la precisión de nuestro anterior modelo."
 #ACCURACY 0.77990
 
 
-
 fit <- rpart(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked,
              data=titanic2,
              method="class", 

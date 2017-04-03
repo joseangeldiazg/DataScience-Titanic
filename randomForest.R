@@ -74,7 +74,7 @@ set.seed(12345)
 
 
 fit <- randomForest(as.factor(Survived) ~ Pclass + Sex + Age + SibSp + Parch + Fare +
-                      Embarked + Title + FamilySize+ CategoryAge2,
+                      Embarked,
                     data=train, 
                     importance=TRUE, 
                     ntree=2000)
