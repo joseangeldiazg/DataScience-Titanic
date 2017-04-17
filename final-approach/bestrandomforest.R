@@ -455,4 +455,123 @@ mosaicplot(train$Pclass ~ train$Survived,
 "Vemos por tanto que si el pasajero corresponde a primera clase, tendrá
 más opciones de vivir"
 
+"Analicemos ahora las variables Parch y Sisbsp"
+
+mosaicplot(train$Parch ~ train$Survived, 
+           main="Muertes por Parch", shade=FALSE, 
+           color=TRUE, xlab="Pclass", ylab="Survived")
+
+
+mosaicplot(train$SibSp ~ train$Survived, 
+           main="Muertes por SibSp", shade=FALSE, 
+           color=TRUE, xlab="Pclass", ylab="Survived")
+
+
+"Vemos que cuando las variables toman valor 1, es decir un hijo,
+padre/madre, o esposa a bordo las prob de sobreviir son mayores. Uniremos
+estas variables en una sola que aglutine todos los miembros de la familia."
+
+addFamilySize <- function(data) {
+  data$FamilySize <- data$SibSp + data$Parch + 1
+  return(data)
+}
+
+all <- addFamilySize(all)
+train <- all[all$PassengerId %in% train$PassengerId, ]
+test <- all[all$PassengerId %in% test$PassengerId, ]
+
+"Una idea que se nos viene a la mente es estudiar la probabilidad de las
+familias de permanecer juntas, por ello, crearemos una nueva funcion con 
+el % de sobrevivir segun los apellidos"
+
+computeSurvivalRatePerColumn <- function(data, column) {
+  rates <- plyr::count(data, vars=c(column, "Survived"))
+  rates <- group_by_(rates, column) %>% dplyr::mutate(SurvivalRate = round(freq * 100 / sum(freq)))
+  rates <- rates[rates$Survived == 1, ]
+  rates <- rates[, which(names(rates) %in% c(column, "SurvivalRate"))]
+  names(rates)[names(rates) == "SurvivalRate"] <- paste0("SurvivalRateBy", column)
+  return(rates)
+}
+
+addSurvivalRate <- function(column, data, rateData) {
+  rates <- computeSurvivalRatePerColumn(rateData, column)
+  rateColumn <- paste0("SurvivalRateBy", column)
+  
+  if(rateColumn %in% names(data)) {
+    data <- data[ , -which(names(data) %in% c(rateColumn))]
+  }
+  data <- left_join(data, rates,by=column)
+  data[is.na(data[, rateColumn]), rateColumn] <- 0
+  return(data)
+}
+
+all <- addSurvivalRate("Surname", all, train)
+train <- all[all$PassengerId %in% train$PassengerId, ]
+test <- all[all$PassengerId %in% test$PassengerId, ]
+
+
+"Otra variable que podemos añadir es si es madre para ello
+podemos fijaremos la edad en 21 años, sexo mujer y parch>0"
+
+addIsMother <- function(data) {
+  data$IsMother <- data$Age > 21 & data$Sex == "female" & data$Parch > 0
+  data[, "IsMother"] <- as.factor(data[, "IsMother"])
+  return(data)
+}
+
+all <- addIsMother(all)
+train <- all[all$PassengerId %in% train$PassengerId, ]
+test <- all[all$PassengerId %in% test$PassengerId, ]
+
+categoricalResultCountBarchart(train, "IsMother", "Survived")
+
+
+"Vemos que las madres tienen mayor probabilidad de sobrevivir.
+Otra variable que podemos añadir es si viaja solo, ya que una 
+persona viajando sola solo tuviera que cuidar de si mismo y 
+ofreceria mayores probabilidades de sobrevivir"
+
+addIsAlone <- function(data)
+{
+  data$IsAlone <- data$Parch==0 & data$SibSp==0
+  data[, "IsAlone"]<- as.factor(data[,"IsAlone"])
+  return(data)
+}
+
+all <- addIsAlone(all)
+train <- addIsAlone(train)
+test <- addIsAlone(test)
+
+categoricalResultCountBarchart(train, "IsAlone", "Survived")
+
+
+"Vamos a crear una variable para identificar familias. Para ello, 
+dado que dos personas de familia distintas pueden tener el mismo 
+apellido, haremos uso tambien del tamaño de la familia, por lo que 
+personas con el mismo apellidoy un mismo numero de miembros de la familia
+casi con toda probabilidad seran familiares"
+
+
+addFamilyID <- function(data) {
+  data$FamilyID <- paste0(data$Surname, as.character(data$FamilySize))
+  data[, "FamilyID"] <- as.factor(data[, "FamilyID"])
+  return(data)
+}
+
+all <- addFamilyID(all)
+train <- all[all$PassengerId %in% train$PassengerId, ]
+test <- all[all$PassengerId %in% test$PassengerId, ]
+
+
+"Abrá algunos outliers, por lo que cuando sean menores de 3 le 
+asignaremos familia pequeña"
+
+all$FamilyIDWO<-as.character(all$FamilyID)
+
+all$FamilyIDWO[as.numeric(as.character(all$FamilySize)) < 3] <- 'Small'
+
+all$FamilyIDWO<-as.factor(all$FamilyIDWO)
+
+str(all$FamilyIDWO)
+
 
