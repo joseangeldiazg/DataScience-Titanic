@@ -566,12 +566,361 @@ test <- all[all$PassengerId %in% test$PassengerId, ]
 "Abrá algunos outliers, por lo que cuando sean menores de 3 le 
 asignaremos familia pequeña"
 
-all$FamilyIDWO<-as.character(all$FamilyID)
 
-all$FamilyIDWO[as.numeric(as.character(all$FamilySize)) < 3] <- 'Small'
 
-all$FamilyIDWO<-as.factor(all$FamilyIDWO)
+MIN_FAMILY_SIZE <- 3
 
-str(all$FamilyIDWO)
+tooSmallFamiliesIndexes <- function(data) {
+  return(which(data$FamilySize < MIN_FAMILY_SIZE))
+}
 
+addFamilyIDWO <- function(data) {
+  data$FamilyIDWO <- paste0(data$Surname, as.character(data$FamilySize))
+  data$FamilyIDWO[tooSmallFamiliesIndexes(data)] <- paste0("FamilySize<", toString(MIN_FAMILY_SIZE))
+  data[, "FamilyIDWO"] <- as.factor(data[, "FamilyIDWO"])
+  return(data)
+}
+
+all <- addFamilyIDWO(all)
+train <- all[all$PassengerId %in% train$PassengerId, ]
+test <- all[all$PassengerId %in% test$PassengerId, ]
+
+all <- addSurvivalRate("FamilyIDWO", all, train)
+train <- all[all$PassengerId %in% train$PassengerId, ]
+test <- all[all$PassengerId %in% test$PassengerId, ]
+
+
+
+"Vamos a realizar un estudio de la cabina para intentar lidiar con los valores
+perdidos"
+
+
+extractDeck <- function(cabin) {
+  return(toString(unique(strsplit(cabin, "[^A-Z]+")[[1]])))
+}
+
+addDeck <- function(data) {
+  data$Deck <- sapply(data$Cabin, extractDeck)
+  data[, "Deck"] <- as.factor(data[, "Deck"])
+  return(data)
+}
+
+all <- addDeck(all)
+train <- all[all$PassengerId %in% train$PassengerId, ]
+test <- all[all$PassengerId %in% test$PassengerId, ]
+
+countBarchart(train, "Deck", "Overall")
+
+
+categoricalResultCountBarchart(train, "Deck", "Survived")
+
+"Vamos a ver si quizá pasajeros que compartan el ticket tambien comparten
+la cabina."
+
+normalizeList <- function(elems) {
+  elems <- unique(elems)
+  elems <- elems[!is.na(elems)]
+  s <- paste(elems, collapse = " ")
+  if(str_length(trimws(s)) == 0) {
+    s <- NA
+  }
+  return(s)
+}
+
+cabins <- all[with(all, order(Ticket)), which(names(all) %in% c("Ticket", "Cabin"))]
+cabins <- cabins %>%
+  group_by(Ticket) %>%
+  summarise(Cabin = list(Cabin))
+cabins$Cabin <- sapply(cabins$Cabin, normalizeList)
+
+ticketsMissngCabinRows <- nrow(cabins[is.na(cabins$Cabin), ])
+
+"Parece ser que no. Una posibilidad será añadir la cabina an 
+en función de la clase."
+
+
+"Análisis del ticket"
+
+
+aggregateFunction <- function(s) {
+  return(paste(s, collapse = " ~ "))
+}
+
+tickets <- train[with(train, order(Ticket)), which(names(train) %in% c("Ticket", "Name", "Surname", "Title", "Sex"))]
+tickets <- tickets %>%
+  group_by(Ticket) %>%
+  summarise(Names = aggregateFunction(Name), 
+            Surnames = aggregateFunction(Surname), 
+            Titles = aggregateFunction(Title), 
+            Genders = aggregateFunction(Sex),
+            People = n())
+tickets <- tickets[tickets$People > 1, ]
+
+all <- addSurvivalRate("Ticket", all, train)
+train <- all[all$PassengerId %in% train$PassengerId, ]
+test <- all[all$PassengerId %in% test$PassengerId, ]
+
+
+
+
+"CLASIFICACION"
+
+
+"Creamos constructores para cada uno de los métodos que usaremos."
+
+RandomForestBuilder <- function() {
+  mtry = 1
+  
+  name = paste("Random Forest (randomForest) mtry:", mtry)
+  
+  model = function(fml, data) {
+    set.seed(345)
+    numVars <- length(attr(terms(fml), "term.labels"))
+    maxMtry <- floor(sqrt(numVars))
+    
+    if (mtry > maxMtry) {
+      return(randomForest(formula(fml), data = data))
+    }
+    return(randomForest(formula(fml), data = data, mtry = mtry))
+  }
+  
+  predictions = function(model, data) {
+    return(stats::predict(model, newdata = data, type = "class"))
+  }
+  
+  probabilities = function(model, data) {
+    result <- predict(model, newdata=data, type="prob")
+    return(result[, 2])
+  }
+  
+  return(list(name=name, model=model, predictions=predictions, probabilities=probabilities))
+}
+
+RandomForestRandomCVBuilder <- function() {
+  name = "Random Forest with Random Search Cross Validation (rpart)"
+  
+  model = function(fml, data) {
+    set.seed(345)
+    return(randomForestRandomCrossValidation(fml, data, "Accuracy", radius=10, repeats=3))
+  }
+  
+  predictions = function(model, data) {
+    return(stats::predict(model, newdata = data, type = "raw"))
+  }
+  
+  probabilities = function(model, data) {
+    result <- predict(model, newdata=data, type="prob")
+    return(result[, 2])
+  }
+  
+  return(list(name=name, model=model, predictions=predictions, probabilities=probabilities))
+}
+
+DecisionTreeBuilder <- function() {
+  name = "Decision Tree (rpart)"
+  
+  model = function(fml, data) {
+    set.seed(345)
+    return(rpart(fml, data = data, method="class"))
+  }
+  
+  predictions = function(model, data) {
+    return(stats::predict(model, newdata = data, type = "class"))
+  }
+  
+  probabilities = function(model, data) {
+    result <- predict(model, newdata=data, type="prob")
+    return(result[, 2])
+  }
+  
+  return(list(name=name, model=model, predictions=predictions, probabilities=probabilities))
+}
+
+ConditionalInferenceBuilder <- function() {
+  mtry = 3
+  
+  name = paste("Conditional Inference Forest (party) mtry: ", mtry)
+  
+  model = function(fml, data) {
+    set.seed(345)
+    
+    numVars <- length(attr(terms(fml), "term.labels"))
+    maxMtry <- floor(sqrt(numVars))
+    
+    if (mtry > maxMtry) {
+      return(cforest(fml, data = data, controls=cforest_unbiased()))
+    }
+    return(cforest(fml, data = data, controls=cforest_unbiased(mtry = mtry)))
+  }
+  
+  predictions = function(model, data) {
+    return(stats::predict(model, newdata = data, type = "response"))
+  }
+  
+  probabilities = function(model, data) {
+    result <- predict(model, newdata=data, type="prob")
+    result <- lapply(result, `[`, 2)
+    return(result)
+  }
+  
+  return(list(name=name, model=model, predictions=predictions, probabilities=probabilities))
+}
+
+SVMBuilder <- function(fml, data) {
+  name = "SVM (e1071)"
+  
+  model = function(fml, data) {
+    set.seed(345)
+    return(svm(formula(fml), data = data, probability=TRUE))
+  }
+  
+  predictions = function(model, data) {
+    return(stats::predict(model, newdata = data, type = "class"))
+  }
+  
+  probabilities = function(model, data) {
+    result <- stats::predict(model, newdata = data, probability=TRUE)
+    return(attr(result, "probabilities")[, 2])
+  }
+  
+  return(list(name=name, model=model, predictions=predictions, probabilities=probabilities))
+}
+
+
+"Creamos funciones para la evaluación en training de los clasificadores"
+
+
+fmeasure <- function(confusion) {
+  p <- confusion$byClass["Pos Pred Value"]
+  r <- confusion$byClass["Sensitivity"]
+  f <- 2 * ((p * r) / (p + r))
+  return(f)
+}
+
+accuracy <- function(confusion) {
+  return(confusion$overall["Accuracy"])
+}
+
+createFormulaName <- function(fml) {
+  formulaName <- paste(format(fml), collapse = "")
+  formulaName <- str_replace_all(formulaName, "[\\s]", "")
+  return(formulaName)
+}
+
+evaluateModel <- function(fml, ModelBuilder, predictionColumn, trainData, testData) {
+  formula <- createFormulaName(fml)
+  modelBuilder <- ModelBuilder()
+  model <- modelBuilder$model(fml, trainData)
+  predictions <- modelBuilder$predictions(model, testData)
+  confusion <- confusionMatrix(data = predictions, reference = testData$Survived)
+  evaluation <- data.frame(model = modelBuilder$name, 
+                           formula = formula,
+                           accuracy = accuracy(confusion), 
+                           fmeasure = fmeasure(confusion), 
+                           stringsAsFactors=FALSE)
+  return(evaluation)
+}
+
+
+
+trainIdx <- createDataPartition(train$Survived, p = 0.6, list = FALSE, times = 1)
+trainData <- train[trainIdx,]
+testData <- train[-trainIdx,]
+
+
+trainData <- addSurvivalRate("Surname", trainData, trainData)
+testData <- addSurvivalRate("Surname", testData, trainData)
+
+
+trainData <- addSurvivalRate("Ticket", trainData, trainData)
+testData <- addSurvivalRate("Ticket", testData, trainData)
+
+trainData <- addSurvivalRate("FamilyID", trainData, trainData)
+testData <- addSurvivalRate("FamilyID", testData, trainData)
+
+trainData <- addSurvivalRate("FamilyIDWO", trainData, trainData)
+testData <- addSurvivalRate("FamilyIDWO", testData, trainData)
+
+formulas <- c(Survived ~ Sex,
+              Survived ~ Sex + Age,
+              Survived ~ Sex + Age + Fare,
+              Survived ~ Sex + Age + Fare + Pclass,
+              Survived ~ Sex + Age + Fare + Pclass + SibSp,
+              Survived ~ Sex + Age + Fare + Pclass + SibSp + Parch,
+              Survived ~ Sex + Age + Fare + Pclass + FamilySize,
+              Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked,
+              Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + Title,
+              Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + TitleWO,
+              Survived ~ Sex + AgeWO + Fare + Pclass + FamilySize + Embarked + TitleWO,
+              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO,
+              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild,
+              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother)
+
+models <- c(RandomForestBuilder, SVMBuilder)
+
+
+evaluateModel( Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother,
+               RandomForestBuilder, "Survived", trainData, testData)
+
+
+
+"Evaluación basada en curvas ROC"
+
+createPrediction <- function(fml, ModelBuilder, testData) {
+  modelBuilder <- ModelBuilder()
+  model <- modelBuilder$model(fml, trainData)
+  probabilities <- modelBuilder$probabilities(model, testData)
+  return(prediction(as.numeric(probabilities), testData$Survived))
+}
+
+createPerformance <- function(prediction) {
+  return(performance(prediction, measure = "tpr", x.measure = "fpr"))
+}
+
+createAuc <- function(prediction) {
+  auc <- performance(prediction, measure = "auc")
+  return(auc@y.values[[1]])
+}
+
+buildModelName <- function(fml, ModelBuilder, auc) {
+  formulaName <- createFormulaName(fml)
+  aucName <- paste("(AUC: ", auc, ")")
+  modelBuilder <- ModelBuilder()
+  name <- paste0(modelBuilder$name, "\n", formulaName, "\n", aucName, "\n")
+  return(name)
+}
+
+createRocPlot <- function(roc) {
+  return(list(geom_ribbon(data = roc, aes(x=FPR, fill = Model, ymin=0, ymax=TPR), alpha = 0.2),
+              geom_line(data = roc, aes(x=FPR, y=TPR, color = Model))))
+}
+
+generateAllROCs <- function(formulas, ModelBuilders, trainData, testData) {
+  rocPlots <- c()
+  for (ModelBuilder in ModelBuilders) {
+    for (fml in formulas) {
+      modelBuilder <- ModelBuilder()
+      prediction <- createPrediction(fml, ModelBuilder, testData)
+      performance <- createPerformance(prediction)
+      auc <- createAuc(prediction)
+      roc <- data.frame(FPR=unlist(performance@x.values),
+                        TPR=unlist(performance@y.values),
+                        Model=rep(buildModelName(fml, ModelBuilder, auc), each=length(performance@x.values)))
+      rocPlots <- c(rocPlots, createRocPlot(roc))
+    }
+  }
+  
+  roc <- data.frame(FPR=c(0.0, 1.0),
+                    TPR=c(0.0, 1.0),
+                    Model=rep("Line of No-discrimination\n", each=2))
+  rocPlots <- c(rocPlots, createRocPlot(roc))
+  ggplot() + rocPlots + coord_fixed()
+}
+
+formulas <- c(Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + TitleWO,
+              Survived ~ Sex + AgeWO + Fare + Pclass + FamilySize + Embarked + TitleWO)
+
+models <- c(RandomForestBuilder, SVMBuilder, DecisionTreeBuilder)
+
+generateAllROCs(formulas, models, trainData, testData)
 
