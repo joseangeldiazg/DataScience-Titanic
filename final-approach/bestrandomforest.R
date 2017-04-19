@@ -737,7 +737,7 @@ DecisionTreeBuilder <- function() {
 }
 
 ConditionalInferenceBuilder <- function() {
-  mtry = 3
+  mtry = 1
   
   name = paste("Conditional Inference Forest (party) mtry: ", mtry)
   
@@ -920,7 +920,47 @@ generateAllROCs <- function(formulas, ModelBuilders, trainData, testData) {
 formulas <- c(Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + TitleWO,
               Survived ~ Sex + AgeWO + Fare + Pclass + FamilySize + Embarked + TitleWO)
 
-models <- c(RandomForestBuilder, SVMBuilder, DecisionTreeBuilder)
+models <- c(RandomForestBuilder)
 
 generateAllROCs(formulas, models, trainData, testData)
 
+
+"EVALUACIÓN TEST"
+
+buildOutputName <- function(fml, modelName) {
+  formulaName <- paste0(format(fml), collapse = "")
+  output <- paste0(modelName, formulaName)
+  output <- str_replace_all(output, "[^\\w]", "")
+  output <- paste0(output, ".csv")
+  return(output)
+}
+
+generatePredictions <- function(fml, ModelBuilder, predictionColumn, trainData, testData) {
+  modelBuilder <- ModelBuilder()
+  model <- modelBuilder$model(fml, trainData)
+  predictions <- modelBuilder$predictions(model, testData)
+  solution <- data.frame(PassengerID = testData$PassengerId, Survived = predictions)
+  output <- buildOutputName(fml, modelBuilder$name)
+  write.csv(solution, file = output, row.names = FALSE)
+  testData$Survived <- predictions
+  return(testData)
+}
+
+generateAllPredictions <- function(formulas, ModelBuilders, predictionColumn, trainData, testData) {
+  for (ModelBuilder in ModelBuilders) {
+    for (fml in formulas) {
+      evaluation <- generatePredictions(fml, ModelBuilder, predictionColumn, trainData, testData)
+    }
+  }
+}
+
+fml <-Survived ~ Sex + AgeWO + FareWO + Pclass + SibSp + Parch + FamilySize + Embarked + TitleWO + FamilyIDWO
+
+
+test <- generatePredictions(Survived ~ Sex + Age+ FareWO + Pclass + FamilySize + Embarked + TitleWO, RandomForestBuilder, "Survived", train, test)
+
+evaluateModel( Survived ~ Sex + Age+ FareWO + Pclass + FamilySize + Embarked + TitleWO, RandomForestBuilder , "Survived", trainData, testData)
+
+submit <- data.frame(PassengerId = test$PassengerId, Survived = test$Survived)
+
+write.csv(submit, file = "/Users/joseadiazg/Desktop/datos/randomForestTune6.csv", row.names = FALSE)
