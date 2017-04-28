@@ -155,10 +155,11 @@ que probablemente maualmente nosotros lo habriamos hecho mal"
 renderTable(train[missingEmbarkedIndex, ])
 
 
-"Ahora vamos a general algunas caracteristicas nuevas. El primer paso 
-será convertir variables categoricas a factores, que son mejor manejadas."
+"Ahora vamos a general algunas características nuevas. El primer paso 
+	será convertir variables categóricas a factores, que son mejor manejadas."
 
-toFactor <- function(data) {
+toFactor <- function(data)
+{
   columns <- intersect(names(data), c("Survived", "Sex", "Embarked", "Pclass", "Ticket"))
   data[, columns] <- lapply(data[, columns] , factor)
   return(data)
@@ -176,11 +177,13 @@ str(train)
 
 namePattern <- "(.+),\\s*(.+?)\\..+"
 
-extractTitle <- function(name) {
+extractTitle <- function(name) 
+{
   return(str_match_all(name, namePattern)[[1]][3])
 }
 
-addTitle <- function(data) {
+addTitle <- function(data) 
+{
   data$Title <- sapply(data$Name, extractTitle)
   data[, "Title"] <- as.factor(data[, "Title"])
   return(data)
@@ -195,7 +198,8 @@ test <- all[all$PassengerId %in% test$PassengerId, ]
 strsplit(all$Name[1], split='[,.]')
 strsplit(all$Name[1], split='[,.]')[[1]][1]
 
-addSurname<- function(data) {
+addSurname<- function(data) 
+{
   data$Surname <- sapply(data$Name, FUN=function(x) {strsplit(x, split='[,.]')[[1]][1]})
   data[, "Surname"] <- as.factor(data[, "Surname"])
   return(data)
@@ -208,22 +212,24 @@ test <- addSurname(test)
 
 "Vamos a estudiar la distribución de muestras por titulo."
 
-countBarchart <- function(data, column, title) {
+countBarchart <- function(data, column, title) 
+{
   ggplot(data, aes_string(x=column)) + 
     geom_bar(fill = "blue", alpha = 0.2) +
-    geom_text(stat='count', aes(label=sprintf("%d\n(%d %%)", ..count.., round(..count.. * 100/sum(..count..), 0)), vjust=0)) +
+    geom_text(stat='count', aes(label=sprintf("%d\n(%d %%)", ..count.., round(..count.. * 100/			sum(..count..), 0)), vjust=0)) +
     xlab(paste(column, "(", title, ")"))
 }
 
 countBarchart(train, "Title", "Overall")
 
 
-"Vemos que hay muchos por lo que algunos se comportaran como outliers que 
-podremos reunir en titulos como raros. Dejaremos solo los mas representados
-y Dr como títulos propios"
+"Vemos que hay muchos por lo que algunos se comportaran como
+outliers que podremos reunir en títulos como raros. Dejaremos solo
+los más representados y Dr como títulos propios"
 
 
-addTitleWO <- function(data) {
+addTitleWO <- function(data) 
+{
   frequent <- c("Mr", "Miss", "Mrs", "Master", "Dr", "Rev")
   data$TitleWO <- sapply(data$Name, extractTitle)
   data$TitleWO[!(data$Title %in% frequent)] <- "Rare"
@@ -256,15 +262,16 @@ mosaicplot(train$Sex ~ train$Survived,
            color=TRUE, xlab="Title", ylab="Survived")
 
 
-"Para la edad, dado que en un histograma veriamos poco,
+"Para la edad, dado que en un histograma veríamos poco,
 dada la variabilidad, usaremos una función para pintar un gráfico
 de barras."
 
-categoricalResultHistogram <- function(data, column, categoryColumn, breaks) {
+categoricalResultHistogram <- function(data, column, categoryColumn, breaks) 
+{
   groupColumn <- paste0(column, "Group")
   suppressWarnings(data[, groupColumn] <- cut2(data[, column], g=breaks, digits=0))
   survivors <- plyr::count(data, vars=c(groupColumn, categoryColumn))
-  survivors <- group_by_(survivors, groupColumn) %>% dplyr::mutate(Percentage = round(freq * 100 / sum(freq)))
+  survivors <- group_by_(survivors, groupColumn) %>% dplyr::mutate(Percentage =  round(freq * 100 / sum(freq)))
   
   ggplot(data = survivors, aes_string(x = groupColumn, y = "Percentage", fill = categoryColumn)) +
     geom_bar(stat="identity", position = "dodge") +
@@ -278,7 +285,8 @@ categoricalResultHistogram(train, "Age", "Survived", 10)
 "Vemos que los  niños tienen más opciones de sobrevivir. Vamos a
 analizar los outliers"
 
-createBoxPlotLabels <- function(data, column) {
+createBoxPlotLabels <- function(data, column) 
+{
   meta <- boxplot.stats(data[, column])
   labels <-data.frame(value=round(median(data[, column]), 4), label="Median")
   labels <-rbind(labels,data.frame(value=round(mean(data[, column]), 4), label="Mean"))
@@ -289,7 +297,8 @@ createBoxPlotLabels <- function(data, column) {
   return(labels)
 }
 
-customBoxPlot <- function(data, column, title) {
+customBoxPlot <- function(data, column, title) 
+{
   labels <- createBoxPlotLabels(data, column)
   ggplot(data, aes_string(x="factor(0)", y=column)) +
     geom_boxplot(fill = "blue", alpha=0.2) +
@@ -303,21 +312,24 @@ customBoxPlot <- function(data, column, title) {
 
 customBoxPlot(all, "Age", "Overall")
 
-"Vamos a reemplazar los outliers con la media. Para ello, usaremos nuevas 
-funciones."
+"Vamos a reemplazar los outliers con la media. Para ello, 
+usaremos nuevas  funciones."
 
-quarter3Indexes <- function(data, column) {
-meta <- boxplot.stats(data[, column])
-q3 <- meta$stats[4]
-return(which( data[, column] > q3))
+quarter3Indexes <- function(data, column) 
+{
+  meta <- boxplot.stats(data[, column])
+  q3 <- meta$stats[4]
+  return(which( data[, column] > q3))
 }
 
-outliersMedian <- function(data, column) {
+outliersMedian <- function(data, column) 
+{
   meta <- boxplot.stats(data[, column])
   return(median(meta$out))
 }
 
-addAgeWO <- function(data) {
+addAgeWO <- function(data) 
+{
   data$AgeWO <- data$Age
   data$AgeWO[data$Age <13] <- 12
   q3Median <- median(data$Age[quarter3Indexes(data, "Age")])
@@ -333,7 +345,7 @@ categoricalResultHistogram(train, "AgeWO", "Survived", 10)
 
 
 "Vemos que aunque hemos sustituido los outliers por encima del
-tercer cuartil, la distribucion del histograma, sigue siendo 
+tercer cuartil, la distribución del histograma, sigue siendo 
 parecida al inicial. Para compararlos podemos hacer lo siguiente"
 
 agewo<-categoricalResultHistogram(train, "AgeWO", "Survived", 10)
@@ -347,7 +359,8 @@ grid.arrange(agewo, age,
 antes haremos un estudio de esta variable para ver cual será el
 punto de corte mejor."
 
-categoricalResultCountBarchart <- function(data, column, categoryColumn) {
+categoricalResultCountBarchart <- function(data, column, categoryColumn)
+{
   survivors <- plyr::count(data, vars=c(column, categoryColumn))
   survivors <- group_by_(survivors, column) %>% dplyr::mutate(Percentage = round(freq * 100 / sum(freq)))
   
@@ -357,7 +370,8 @@ categoricalResultCountBarchart <- function(data, column, categoryColumn) {
 }
 
 
-addIsChild <- function(data) {
+addIsChild <- function(data) 
+{
   data$IsChild <- data$Age < 12
   data[, "IsChild"] <- as.factor(data[, "IsChild"])
   return(data)
@@ -373,7 +387,8 @@ isChild12<-categoricalResultCountBarchart(train, "IsChild", "Survived")
 
 "Ahora cambiamos a 14 el punto de corte"
 
-addIsChild <- function(data) {
+addIsChild <- function(data) 
+{
   data$IsChild <- data$Age < 14
   data[, "IsChild"] <- as.factor(data[, "IsChild"])
   return(data)
@@ -396,32 +411,32 @@ es mayor por lo que la dejaremos en este punto de corte."
 
 categoricalResultCountBarchart(train, "IsChild", "Survived")
 
-
-
 "Vamos a hacer ahora un estudio del precio del ticket y si sobrevivieron
 primero con la distribución y luego con los outliers"
 
 categoricalResultHistogram(train, "Fare", "Survived", 6)
-
 
 customBoxPlot(all, "Fare", "Overall")
 
 "Vemos que claramente hay outliers, por lo que vamos a intentar reducir estas
 significancias."
 
-quarter1Indexes <- function(data, column) {
+quarter1Indexes <- function(data, column) 
+{
   meta <- boxplot.stats(data[, column])
   q1 <- meta$stats[2]
   return(which(data[, column] < q1))
 }
 
 
-outliersMedian <- function(data, column) {
+outliersMedian <- function(data, column) 
+{
   meta <- boxplot.stats(data[, column])
   return(median(meta$out))
 }
 
-addFareWO <- function(data) {
+addFareWO <- function(data)
+{
   data$FareWO <- data$Fare
   q1Median <- median(data$Age[quarter1Indexes(data, "Fare")])
   q3Median <- median(data$Age[quarter3Indexes(data, "Fare")])
@@ -435,8 +450,8 @@ train <- all[all$PassengerId %in% train$PassengerId, ]
 test <- all[all$PassengerId %in% test$PassengerId, ]
 
 
-"Obtenemos los histogramas, antes y después para ver si se mantienen
-lo visto anteriormente en la distrubución"
+"Obtenemos los histogramas, antes y después para ver si se mantienen 
+lo visto anteriormente en la distribución"
 
 fareHistogram <- customHistogram(all, "Fare", "Overall")
 fareWOHistogram <- customHistogram(all, "FareWO", "Overall")
@@ -468,7 +483,7 @@ mosaicplot(train$SibSp ~ train$Survived,
 
 
 "Vemos que cuando las variables toman valor 1, es decir un hijo,
-padre/madre, o esposa a bordo las prob de sobreviir son mayores. Uniremos
+padre/madre, o esposa a bordo las prob de sobrevivir son mayores. Uniremos
 estas variables en una sola que aglutine todos los miembros de la familia."
 
 addFamilySize <- function(data) {
@@ -481,10 +496,11 @@ train <- all[all$PassengerId %in% train$PassengerId, ]
 test <- all[all$PassengerId %in% test$PassengerId, ]
 
 "Una idea que se nos viene a la mente es estudiar la probabilidad de las
-familias de permanecer juntas, por ello, crearemos una nueva funcion con 
-el % de sobrevivir segun los apellidos"
+familias de permanecer juntas, por ello, crearemos una nueva función con 
+el % de sobrevivir según los apellidos"
 
-computeSurvivalRatePerColumn <- function(data, column) {
+computeSurvivalRatePerColumn <- function(data, column) 
+{
   rates <- plyr::count(data, vars=c(column, "Survived"))
   rates <- group_by_(rates, column) %>% dplyr::mutate(SurvivalRate = round(freq * 100 / sum(freq)))
   rates <- rates[rates$Survived == 1, ]
@@ -493,11 +509,13 @@ computeSurvivalRatePerColumn <- function(data, column) {
   return(rates)
 }
 
-addSurvivalRate <- function(column, data, rateData) {
+addSurvivalRate <- function(column, data, rateData)
+{
   rates <- computeSurvivalRatePerColumn(rateData, column)
   rateColumn <- paste0("SurvivalRateBy", column)
   
-  if(rateColumn %in% names(data)) {
+  if(rateColumn %in% names(data)) 
+  {
     data <- data[ , -which(names(data) %in% c(rateColumn))]
   }
   data <- left_join(data, rates,by=column)
@@ -513,7 +531,8 @@ test <- all[all$PassengerId %in% test$PassengerId, ]
 "Otra variable que podemos añadir es si es madre para ello
 podemos fijaremos la edad en 21 años, sexo mujer y parch>0"
 
-addIsMother <- function(data) {
+addIsMother <- function(data) 
+{
   data$IsMother <- data$Age > 21 & data$Sex == "female" & data$Parch > 0
   data[, "IsMother"] <- as.factor(data[, "IsMother"])
   return(data)
@@ -529,7 +548,7 @@ categoricalResultCountBarchart(train, "IsMother", "Survived")
 "Vemos que las madres tienen mayor probabilidad de sobrevivir.
 Otra variable que podemos añadir es si viaja solo, ya que una 
 persona viajando sola solo tuviera que cuidar de si mismo y 
-ofreceria mayores probabilidades de sobrevivir"
+ofrecería mayores probabilidades de sobrevivir"
 
 addIsAlone <- function(data)
 {
@@ -547,9 +566,9 @@ categoricalResultCountBarchart(train, "IsAlone", "Survived")
 
 "Vamos a crear una variable para identificar familias. Para ello, 
 dado que dos personas de familia distintas pueden tener el mismo 
-apellido, haremos uso tambien del tamaño de la familia, por lo que 
-personas con el mismo apellidoy un mismo numero de miembros de la familia
-casi con toda probabilidad seran familiares"
+apellido, haremos uso también del tamaño de la familia, por lo que 
+personas con el mismo apellido y un mismo numero de miembros de la familia
+casi con toda probabilidad serán familiares"
 
 
 addFamilyID <- function(data) {
@@ -563,18 +582,20 @@ train <- all[all$PassengerId %in% train$PassengerId, ]
 test <- all[all$PassengerId %in% test$PassengerId, ]
 
 
-"Abrá algunos outliers, por lo que cuando sean menores de 3 le 
+"Habrá algunos outliers, por lo que cuando sean menores de 3 le 
 asignaremos familia pequeña"
 
 
 
 MIN_FAMILY_SIZE <- 3
 
-tooSmallFamiliesIndexes <- function(data) {
+tooSmallFamiliesIndexes <- function(data)
+{
   return(which(data$FamilySize < MIN_FAMILY_SIZE))
 }
 
-addFamilyIDWO <- function(data) {
+addFamilyIDWO <- function(data) 
+{
   data$FamilyIDWO <- paste0(data$Surname, as.character(data$FamilySize))
   data$FamilyIDWO[tooSmallFamiliesIndexes(data)] <- paste0("FamilySize<", toString(MIN_FAMILY_SIZE))
   data[, "FamilyIDWO"] <- as.factor(data[, "FamilyIDWO"])
@@ -588,7 +609,6 @@ test <- all[all$PassengerId %in% test$PassengerId, ]
 all <- addSurvivalRate("FamilyIDWO", all, train)
 train <- all[all$PassengerId %in% train$PassengerId, ]
 test <- all[all$PassengerId %in% test$PassengerId, ]
-
 
 
 "Vamos a realizar un estudio de la cabina para intentar lidiar con los valores
@@ -614,10 +634,11 @@ countBarchart(train, "Deck", "Overall")
 
 categoricalResultCountBarchart(train, "Deck", "Survived")
 
-"Vamos a ver si quizá pasajeros que compartan el ticket tambien comparten
+"Vamos a ver si quizá pasajeros que compartan el ticket también comparten
 la cabina."
 
-normalizeList <- function(elems) {
+normalizeList <- function(elems) 
+{
   elems <- unique(elems)
   elems <- elems[!is.na(elems)]
   s <- paste(elems, collapse = " ")
@@ -642,7 +663,8 @@ en función de la clase."
 "Análisis del ticket"
 
 
-aggregateFunction <- function(s) {
+aggregateFunction <- function(s) 
+{
   return(paste(s, collapse = " ~ "))
 }
 
@@ -659,8 +681,6 @@ tickets <- tickets[tickets$People > 1, ]
 all <- addSurvivalRate("Ticket", all, train)
 train <- all[all$PassengerId %in% train$PassengerId, ]
 test <- all[all$PassengerId %in% test$PassengerId, ]
-
-
 
 
 "CLASIFICACION"
