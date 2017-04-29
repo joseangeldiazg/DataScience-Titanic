@@ -1,0 +1,1046 @@
+%---------------------------------------------------
+% Nombre: capitulo2.tex  
+% 
+% Texto del capítulo 2
+%---------------------------------------------------
+
+\chapter{Preprocesado}
+\label{1}
+
+En este capítulo veremos una primera aproximación al trabajo con el dataset usando técnicas de transformación, preprocesado, visualización y exploración de datos. 
+
+La exploración que veremos en este punto y la aplicación de técnicas de clasificación avanzadas que veremos en el punto \ref{clasificacion} han sido resultado de la unión de algunos de los tutoríales que podemos encontrar en la competición en Kaggle, concretamente el de Trevor Stephens \cite{trevor} y el de Marcio Gualtieri, \cite{marcio} con el que hemos obtenido los mejores resultados. 
+
+
+\section{Exploración del dataset y missing values}
+
+Antes de comenzar a trabajar con cualquier data set es necesario saber las características de los datos con los que estamos trabajando con el fin de poder ser más precisos en nuestras predicciones y obtener mejores resultados en nuestro modelo. Esto puede hacerse de diversas maneras, pero una primera aproximación podría ser  el siguiente script en R. 
+
+\lstset{language=R, breaklines=true, basicstyle=\footnotesize}
+\lstset{numbers=left, numberstyle=\tiny, stepnumber=1, numbersep=-2pt}
+\begin{lstlisting}
+    #Análisis exploratorio (selección de características) y regresión logística
+    
+	suppressMessages(library(caret))           # Machine learning
+	suppressMessages(library(rpart))
+	suppressMessages(library(e1071))
+	suppressMessages(library(randomForest))
+	suppressMessages(library(mlbench))
+	suppressMessages(library(party))
+	suppressMessages(library(ggplot2))       # Plotting
+	suppressMessages(library(lattice))
+	suppressMessages(library(grid))
+	suppressMessages(library(gridExtra, warn.conflicts = FALSE))
+	suppressMessages(library(ggrepel))
+	suppressMessages(library(vcd))
+	suppressMessages(library(rpart.plot))
+	suppressMessages(library(rattle))
+	suppressMessages(library(ROCR))
+	suppressMessages(library(mice))             # Data imputation
+	suppressMessages(library(xtable))          # Pretty printing dataframes
+	suppressMessages(library(plyr, warn.conflicts = FALSE))  # Manipulating dataframes
+	suppressMessages(library(Hmisc))
+	suppressMessages(library(Amelia))         # Missing data
+	suppressMessages(library(dplyr, warn.conflicts = FALSE))
+	suppressMessages(library(stringr))  
+    
+    
+    "Primero haremos una limpieza y estudio exploratorio de los datos. 
+    Tener datos limpios y de buena calidad es un factor importante antes de 
+    comenzar a trabajar con nuestro data set. Uno de los principales problemas
+    a descubrir y solventar son los valores perdidos, sobre esta cuestión será la
+    primera que trabajaremos."
+     
+    
+    	#Cargamos el dataset y asignamos un valor concreto a los valores perdidos
+    
+   	train <- read.csv('../input/train.csv', na.strings=c("NA", "NULL", ""), stringsAsFactors = F)
+	
+	test  <- read.csv('../input/test.csv', na.strings=c("NA", "NULL", ""), stringsAsFactors = F)
+
+	#Juntamos ambos orígenes de datos para poder trabajar con ellos juntos. La opción  
+	#fill de rbind, si alguno de los data set le falta una columna la rellenará."
+
+	all <- rbind.fill(train, test)
+    
+    	#Vamos a estudiar cuantos tenemos en cada uno de los dataset para hacernos una idea de los datos que tratamos:
+    
+    	trainRows <- nrow(train)
+	testRows <- nrow(test)
+	totalRows <- nrow(train) + nrow(test)
+
+	#Train
+	trainRows
+	#Test
+	testRows
+	#Total
+	totalRows
+    
+    
+    #La función str(dataset) nos dará información sobre los tipos y distribuciones de las caracteristicas
+    
+    str(train)
+    
+    #Con sapply podremos ver la distribución de las variables más detalladamente. 
+    
+    sapply(train, function(x) length(unique(x)))
+    
+    "La función anterior es interesante pero ahora vamos a comenzar a ver
+     las distribuciones de las variables gráficamente para hacernos una idea
+     de los datos con los que estamos trabajando."
+    
+    barplot(table(titanic$Survived),
+            names.arg = c("Murio", "Vivio"),
+            main="Survived", col="black")
+    
+    barplot(table(titanic$Pclass), 
+            names.arg = c("Primera", "Segunda", "Tercera"),
+            main="Pclass (clase del viajero)", col="firebrick")
+    
+    barplot(table(titanic$Sex),
+            names.arg = c("Mujer", "Hombre"),
+            main="Sex (genero)", col="darkviolet")
+    
+    hist(titanic$Age, main="Age", xlab = NULL, col="brown")
+    
+    barplot(table(titanic$SibSp), main="SibSp (hijos y esposa a bordo)", 
+            col="darkblue")
+    
+    barplot(table(titanic$Parch), main="Parch (Padres e hijos abordo)", 
+            col="gray50")
+    
+    hist(titanic$Fare, main="Fare (Precio del ticket)", xlab = NULL, 
+         col="darkgreen")
+    
+    barplot(table(titanic$Embarked), 
+            names.arg = c("Cherbourg", "Queenstown", "Southampton"),
+            main="Embarked (Lugar donde embarcó)", col="sienna")  
+    
+    #Sería más interesante verlas de manera doble para ello podemos usar:
+    
+    mosaicplot(titanic$Pclass ~ titanic$Survived, 
+               main="Passenger Fate by Traveling Class", shade=FALSE, 
+               color=TRUE, xlab="Pclass", ylab="Survived")
+    
+    #Con la clase podremos afinar poco nuestro modelo... vamos a probar con Sex.
+    
+    mosaicplot(titanic$Sex ~ titanic$Survived, 
+               main="Passenger Fate by Traveling Class", shade=FALSE, 
+               color=TRUE, xlab="Sex", ylab="Survived")   
+    
+    "Parece que tenemos un ganador... en base a Sex podremos hacer nuestra 
+    primera predicción salvando a todas las mujeres y asignando que no sobreviven
+    a todos los hombres.Vamos a ver con otras variables, quizá con Embarked 
+    podríamos obtener donde montó la Tripulación y afinar en que estas personas
+    murieron dado que solo se puso a salvo a los pasajeros"
+    
+    mosaicplot(titanic$Embarked ~ titanic$Survived, 
+               main="Passenger Fate by Traveling Class", shade=FALSE, 
+               color=TRUE, xlab="Embarked", ylab="Survived")
+    
+    #Embarked ofrece poco... pero vamos a ver que pasa con Cabin por ejemplo:
+    
+    mosaicplot(titanic$Cabin ~ titanic$Survived, 
+               main="Passenger Fate by Traveling Class", shade=FALSE, 
+               color=TRUE, xlab="Cabin", ylab="Survived")
+    
+
+	#Hemos encontrado valores perdidos, vamos a trabajar con ellos. 
+
+	#Ver valores perdidos
+
+	sapply(train,function(x) sum(is.na(x)))
+	sapply(test,function(x) sum(is.na(x))) 
+
+    
+   	 #También podemos visualizarlo gráficamente
+    
+   	missmap(train, main = "Missing Values (Training Data-set)", col = c("red", "lightgrey"))
+	missmap(test, main = "Missing Values (Testing Data-set)", col = c("red", "lightgrey"))    
+    
+    
+    "Tendremos por tanto, valores perdidos en las variables  CABIN, AGE Y FARE y EMBARKED. 
+    Pasaremos las columnas con valores perdidos a variables para poder trabajar con ellas. "
+    
+    
+    	missingCabinRows <- nrow(all[is.na(all$Cabin), ])
+	missingAgeRows <- nrow(all[is.na(all$Age), ])
+	missingFareRows <- nrow(all[is.na(all$Fare), ])
+	missingEmbarkedRows <- nrow(all[is.na(all$Embarked), ])
+    
+    
+    "Para predecir las variables continuas podemos usar la libreria mice"
+    	
+	estimateMissingVariables <- function(data) 
+	{
+  		predictors <- c("Age", "Sex", "Fare", "Pclass", "SibSp", "Parch", "Embarked", "Title")
+ 	 	set.seed(345)
+  		capture.output(model <- mice(data[, names(data) %in% predictors], method='rf'))
+  		output <- complete(model)
+  		data$Age <- output$Age
+  		data$Fare <- output$Fare
+  		return(data)
+	}
+
+	fixedAll <- estimateMissingVariables(all)
+
+	"Para ver que todo sigue como antes y que los datos originales no han sido cambiados
+	 podemos usar histogramas de la distribución de edad antes y después. "
+	 
+	 
+	 customHistogram <- function(data, column, title) 
+	 {
+  		missing = nrow(data[is.na(data[,  column]), ])
+ 		ggplot(data=data, aes_string(x = column)) +
+  		geom_histogram(bins = 20, na.rm = TRUE, fill = "blue", alpha = 0.2) +
+  		xlab(paste(column, "(", title, ", NA Count: ", missing, ")"))
+	}
+
+		allAge <- customHistogram(all, "Age", "Original")
+		fixedAllAge <- customHistogram(fixedAll, "Age", "Fixed")
+
+		allFare <- customHistogram(all, "Fare", "Original")
+		fixedAllFare <- customHistogram(fixedAll, "Fare", "Fixed")
+
+		grid.arrange(allAge, fixedAllAge, 
+             				allFare, fixedAllFare,
+             				ncol=2, nrow=2)
+	
+    
+     #Como todo parece mantenerse igual hacemos los cambios fijos
+     
+     	all <- fixedAll
+	train <- all[all$PassengerId %in% train$PassengerId, ]
+	test <- all[all$PassengerId %in% test$PassengerId, ]
+    
+    
+    "Para la variable Embarked, dado que se trata de una variable categórica podremos elegir
+     varias opciones, por un lado podremos añadir el valor de la mayoría, en este caso **S**, aunque
+     para ajustar mejor podremos usar un Random Forest que nos ayude a predecir esta variable
+     en función de las demás. "
+    
+    	estimateMissingEmbarked <- function(data) 
+	{
+  		missing <- data[is.na(data$Embarked), ]
+  		present <- data[!is.na(data$Embarked), ]
+
+ 	 	fol <- formula(Embarked ~ Sex + Age + Fare + Pclass + SibSp + Parch)
+  		model <- rpart(fol, method='class', data=present)
+  		missing$Embarked <-predict(model, missing, type="class")
+  		all <- rbind.fill(missing, present)
+  		all <- all[with(all, order(PassengerId)), ]
+  		return(all)
+	}
+
+	all <- estimateMissingEmbarked(all)
+	train <- all[all$PassengerId %in% train$PassengerId, ]
+	test <- all[all$PassengerId %in% test$PassengerId, ]
+    
+    
+    "Por último en el proceso de exploración de los datos, haremos un estudio
+     estadístico de los mismos."
+    
+    	estadistic <- train[,-c(1,4, 9, 11)]
+
+	model <- glm(Survived ~.,family=binomial(link='logit'),data=estadistic)
+
+	summary(model)
+    
+\end{lstlisting}
+
+
+Vamos a estudiar detalladamente los gráficos que obtenemos en el anterior script. Haciendo uso de \textbf{\textit{barplot()}} y \textbf{\textit{hist()}} podemos obtener los siguientes gráficos que ya nos indican mucha información acerca de las distribuciones de las variables. 
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.6]{./Capitulo2/imagenes/survived.png}
+		\caption{Distribución de Survived.}
+	\label{fig_survived}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.6]{./Capitulo2/imagenes/sex.png}
+		\caption{Distribución de Sex.}
+	\label{fig_sex}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.6]{./Capitulo2/imagenes/class.png}
+		\caption{Distribución de la clase.}
+	\label{fig_class}
+\end{figure} 
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.6]{./Capitulo2/imagenes/embarked.png}
+		\caption{Distribución de la variable Embarked.}
+	\label{fig_embarked}
+\end{figure} 
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.6]{./Capitulo2/imagenes/edad.png}
+		\caption{Distribución de edad.}
+	\label{fig_edad}
+\end{figure} 
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.6]{./Capitulo2/imagenes/hijos.png}
+		\caption{Distribución de la variable Sisbsp.}
+	\label{fig_hijos}
+\end{figure} 
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.6]{./Capitulo2/imagenes/padres.png}
+		\caption{Distribución de la variable Parch.}
+	\label{fig_padres}
+\end{figure} 
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.6]{./Capitulo2/imagenes/ticket.png}
+		\caption{Distribución de Ticket.}
+	\label{fig_ticket}
+\end{figure}
+
+
+
+Por otro lado simplemente con el comando \textbf{\textit{sapply(titanic, function(x) length(unique(x)))}} obtendremos los distintos valores posibles para cada una de las variables en nuestro dataset tal y como podemos ver en la figura \ref{fig_1}. A simple vista con este simple comando podemos descartar ciertas variables cuya variabilidad es la misma que el número de ejemplos en el data set, lo que nos indica que es algún tipo de id único que sirve de poco a la hora de trabajar con nuestro problema. 
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.7]{./Capitulo2/imagenes/1.png}
+		\caption{Variabilidad de las variables usadas.}
+	\label{fig_1}
+\end{figure} 
+
+
+Estos comandos anteriores nos ayudan a ubicarnos dentro del dataset, pero si nuestra variable objetivo es predecir la clase Survived en función de las demás para poder aumentar el accuracy de nuestro modelo, quizá nos sea de más ayuda la función \textbf{\textit{mosaicplot()}} que ofrece gráficos combinados como los que podemos encontrar en las figuras \ref{distri1}, \ref{distri2}. En las que a ojo ya podríamos dar alguna predicción como que si se es hombre, hay una gran posibilidad de perecer en el accidente frente a si se es mujer. 
+
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.6]{./Capitulo2/imagenes/ss.png}
+		\caption{Distribución de Sex y Survived combinada.}
+	\label{distri1}
+\end{figure} 
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.6]{./Capitulo2/imagenes/sc.png}
+		\caption{Distribución de Class y Survived combinada.}
+	\label{distri2}
+\end{figure} 
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.6]{./Capitulo2/imagenes/scabin.png}
+		\caption{Distribución de Cabin y Survived combinada.}
+	\label{mis}
+\end{figure} 
+
+
+Atendamos ahora a la gráfica \ref{mis}. ¿Qué está ocurriendo aquí? Por un lado la variabilidad de la variable es alta y por otro tenemos un nuevo problema en nuestro data set, hemos encontrado \textit{\textbf{Missing Values}}, los cuales presentan uno de los mayores problemas dentro del preprocesado de datos. Con el fin de conocer si estos realmente suponen un problema podemos usar la función \textit{\textbf{missmap()}}  cuya salida podemos verla en la figura \ref{fig_2} y \ref{mistest}. Podemos ver como hay variables como \textit{cabin, age, embarked o fare} con valores perdidos.  
+
+Al encontrarnos este problema podemos optar por las siguientes opciones:
+
+\begin{itemize}
+	\item Eliminar esa variable si no es muy relevante y el número de valores perdidos es muy elevado. 
+	\item Cambiar los valores perdidos por otros valores como la media, mediana o moda entre los valores que si conocemos o predecir los valores perdidos en función de las variables que si conocemos. 
+\end{itemize}
+
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.37]{./Capitulo2/imagenes/mistra.png}
+		\caption{Valores perdidos en training.}
+	\label{fig_2}
+\end{figure} 
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.37]{./Capitulo2/imagenes/mistest.png}
+		\caption{Valores perdidos en test.}
+	\label{mistest}
+\end{figure} 
+
+
+
+En nuestro caso, Cabin no parece una variable muy importante de cara al procesado del dataset pero la edad si que debe ser relevante porque acorde a datos históricos en el Titanic se puso a salvo primero a los niños y las mujeres.  Por lo que el proceso de imputación de valores perdidos que hemos seguido es el siguiente:
+
+\begin{itemize}
+	\item Para variables continuas como Age o Fare, hemos predecido con el maquete \textbf{mice} el valor de estas.
+	\item Para variables categóricas como Embarked, hemos usado Random Forest, que asigna a los valores perdidos C en lugar de S que sería el valor de la mayoría y el que habríamos asignado a ojo en caso de no predecir. 
+	\item La variable cabin de momento se mantendrá fuera del proceso ya que ofrece muchos valores perdidos que a priori no son sencillos de obtener. 
+\end{itemize}
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.4]{./Capitulo2/imagenes/histcomp.png}
+		\caption{Comparación de la imputación de valores perdidos.}
+	\label{histcomp}
+\end{figure} 
+
+En ciencia de datos es muy relevante que cada uno de los pasos que damos no cambien el dataset con el que estamos trabajando, sino que estos se ajusten lo máximo a la realidad. Para comprobar que tal ha funcionado nuestro proceso de imputación de valores perdidos hemos obtenido los gráficos que podemos ver en la figura \ref{histcomp}, donde vemos las distribuciones antes y después las cuales se mantienen. 
+
+
+Por último, en nuestro proceso de exploración del dataset, haremos un test estadístico y una regresión lineal para ver si podemos obtener información relevante sobre los datos, la salida de esta ejecución la tenemos en la figura \ref{fig_3}.
+
+\begin{figure}[h]
+	\centering
+		\includegraphics[scale=0.7]{./Capitulo2/imagenes/3.png}
+		\caption{Regresión del dataset.}
+	\label{fig_3}
+\end{figure} 
+
+
+Podemos interpretar por tanto sobre estos resultados que el sexo masculino, la edad y la clase serán datos muy relevantes a la hora de predecir la supervivencia o no de un determinado pasajero, por lo que serán variables que deberemos mantener y estudiar. Por otro lado, podemos ver que las variables \textbf{Embarked, o Fare} no son estadísticamente representativas en el problema, ya que su \textit{p-value} es el más pequeño de todas.
+
+Con el proceso seguido en este punto, tenemos ya una clara imagen del dataset al que nos enfrentamos, por lo que en los puntos siguientes vamos a intentar hacer las primeras predicciones y sacarle el mayor partido al dataset con un exhaustivo proceso de selección de características. 
+
+
+\section{Ingeniería de características}
+\label{engfeature}
+
+En esta sección veremos como generar nuevas características interesantes para nuestro problema y como mejorar algunas de las ya existentes. El script usado es el siguiente y en el además de los comandos usados, encontramos comentados las explicaciones de los conceptos más interesantes del mismo. 
+
+\begin{lstlisting}
+
+    	"Ahora vamos a general algunas características nuevas. El primer paso 
+	será convertir variables categóricas a factores, que son mejor manejadas."
+
+	toFactor <- function(data)
+	 {
+  	columns <- intersect(names(data), c("Survived", "Sex", "Embarked", "Pclass", "Ticket"))
+  	data[, columns] <- lapply(data[, columns] , factor)
+  	return(data)
+	}
+
+
+	all <- toFactor(all)
+	train <- all[all$PassengerId %in% train$PassengerId, ]
+	test <- all[all$PassengerId %in% test$PassengerId, ]
+
+
+	str(train)
+
+	"Obtenemos el título de cada una de las personas del pasaje."
+
+	namePattern <- "(.+),\\s*(.+?)\\..+"
+
+	extractTitle <- function(name) 
+	{
+ 		 return(str_match_all(name, namePattern)[[1]][3])
+	}
+
+	addTitle <- function(data) 
+	{
+  		data$Title <- sapply(data$Name, extractTitle)
+  		data[, "Title"] <- as.factor(data[, "Title"])
+ 		 return(data)
+	}
+
+	all <- addTitle(all)
+	train <- all[all$PassengerId %in% train$PassengerId, ]
+	test <- all[all$PassengerId %in% test$PassengerId, ]
+	
+	"Obtenemos el apellido."
+
+	strsplit(all$Name[1], split='[,.]')
+	strsplit(all$Name[1], split='[,.]')[[1]][1]
+
+	addSurname<- function(data) 
+	{
+ 		 data$Surname <- sapply(data$Name, FUN=function(x) {strsplit(x, split='[,.]')[[1]][1]})
+  		data[, "Surname"] <- as.factor(data[, "Surname"])
+  		return(data)
+	}
+
+	all <- addSurname(all)
+	train <- addSurname(train)
+	test <- addSurname(test)
+
+
+	"Vamos a estudiar la distribución de muestras por titulo."
+
+	countBarchart <- function(data, column, title) 
+	{
+	  	ggplot(data, aes_string(x=column)) + 
+    		geom_bar(fill = "blue", alpha = 0.2) +
+   	 	geom_text(stat='count', aes(label=sprintf("%d\n(%d %%)", ..count.., round(..count.. * 100/			sum(..count..), 0)), vjust=0)) +
+    		xlab(paste(column, "(", title, ")"))
+	}
+
+	countBarchart(train, "Title", "Overall")
+
+
+	"Vemos que hay muchos por lo que algunos se comportaran como
+	 outliers que podremos reunir en títulos como raros. Dejaremos solo
+	 los más representados y Dr como títulos propios"
+
+
+	addTitleWO <- function(data) 
+	{
+  		frequent <- c("Mr", "Miss", "Mrs", "Master", "Dr", "Rev")
+  		data$TitleWO <- sapply(data$Name, extractTitle)
+  		data$TitleWO[!(data$Title %in% frequent)] <- "Rare"
+  		data[, "TitleWO"] <- as.factor(data[, "TitleWO"])
+  		return(data)
+	}
+
+	all <- addTitleWO(all)
+	train <- all[all$PassengerId %in% train$PassengerId, ]
+	test <- all[all$PassengerId %in% test$PassengerId, ]
+
+	countBarchart(train, "TitleWO", "Overall")
+
+
+	"Un recurso útil para la visualización de datos en función de otros 
+	pueden ser los histogramas."
+
+
+	mosaicplot(train$TitleWO ~ train$Survived, 
+           	main="Perecidos por Titulo", shade=FALSE, 
+           	color=TRUE, xlab="Title", ylab="Survived")
+
+
+	"Parece ser que nuestra variable título ofrecerá grandes resultados.
+	Vamos a continuar con el análisis exploratorio de las demás variables."
+
+
+	mosaicplot(train$Sex ~ train$Survived, 
+           	main="Perecidos por Titulo", shade=FALSE, 
+           	color=TRUE, xlab="Title", ylab="Survived")
+
+
+	"Para la edad, dado que en un histograma veríamos poco,
+	dada la variabilidad, usaremos una función para pintar un gráfico
+	de barras."
+
+	categoricalResultHistogram <- function(data, column, categoryColumn, breaks) 
+	{
+  		groupColumn <- paste0(column, "Group")
+  		suppressWarnings(data[, groupColumn] <- cut2(data[, column], g=breaks, digits=0))
+  		survivors <- plyr::count(data, vars=c(groupColumn, categoryColumn))
+  		survivors <- group_by_(survivors, groupColumn) %>% dplyr::mutate(Percentage =  round(freq * 100 / sum(freq)))
+  
+  		ggplot(data = survivors, aes_string(x = groupColumn, y = "Percentage", fill = categoryColumn)) +
+    		geom_bar(stat="identity", position = "dodge") +
+    		geom_text(aes(label=sprintf("%d\n(%d %%)", freq, Percentage))) +
+    		xlab(column)
+	}
+
+	categoricalResultHistogram(train, "Age", "Survived", 10)
+
+
+	"Vemos que los  niños tienen más opciones de sobrevivir. Vamos a
+	analizar los outliers"
+
+	createBoxPlotLabels <- function(data, column) 
+	{
+  		meta <- boxplot.stats(data[, column])
+  		labels <-data.frame(value=round(median(data[, column]), 4), label="Median")
+  		labels <-rbind(labels,data.frame(value=round(mean(data[, column]), 4), label="Mean"))
+  		labels <-rbind(labels,data.frame(value=meta$stats[2], label="1st Quartile"))
+  		labels <-rbind(labels,data.frame(value=meta$stats[4], label="3rd Quartile"))
+  		if(length(meta$out) > 0) labels <-rbind(labels,data.frame(value=round(median(meta$out), 4), label="Outliers Median"))
+  		if(length(meta$out) > 0) labels <-rbind(labels,data.frame(value=round(mean(meta$out), 4), label="Outliers Mean"))
+  		return(labels)
+	}
+
+	customBoxPlot <- function(data, column, title) 
+	{
+  		labels <- createBoxPlotLabels(data, column)
+ 	 	ggplot(data, aes_string(x="factor(0)", y=column)) +
+    		geom_boxplot(fill = "blue", alpha=0.2) +
+    		geom_point(position = position_jitter(width = 0.2), color = "darkblue") +
+    		geom_label_repel(data=labels,
+                     aes(x=factor(0), y=value, label=paste0(label, ": ", value)),
+                     colour="red", angle=0, size=3,
+                     point.padding = unit(1.0, "lines"), box.padding = unit(0.5, "lines")) +
+    		xlab(title)
+	}
+
+	customBoxPlot(all, "Age", "Overall")
+
+	"Vamos a reemplazar los outliers con la media. Para ello, 
+	usaremos nuevas  funciones."
+
+	quarter3Indexes <- function(data, column) 
+	{
+		meta <- boxplot.stats(data[, column])
+		q3 <- meta$stats[4]
+		return(which( data[, column] > q3))
+	}
+
+	outliersMedian <- function(data, column) 
+	{
+  		meta <- boxplot.stats(data[, column])
+  		return(median(meta$out))
+	}
+
+	addAgeWO <- function(data) 
+	{
+  		data$AgeWO <- data$Age
+  		data$AgeWO[data$Age <13] <- 12
+  		q3Median <- median(data$Age[quarter3Indexes(data, "Age")])
+  		data$AgeWO[quarter3Indexes(data, "Age")] <- q3Median
+  		return(data)
+	}
+
+	all <- addAgeWO(all)
+	train <- all[all$PassengerId %in% train$PassengerId, ]
+	test <- all[all$PassengerId %in% test$PassengerId, ]
+
+	categoricalResultHistogram(train, "AgeWO", "Survived", 10)
+
+
+	"Vemos que aunque hemos sustituido los outliers por encima del
+	tercer cuartil, la distribución del histograma, sigue siendo 
+	parecida al inicial. Para compararlos podemos hacer lo siguiente"
+
+	agewo<-categoricalResultHistogram(train, "AgeWO", "Survived", 10)
+	age<-categoricalResultHistogram(train, "Age", "Survived", 10)
+
+	grid.arrange(agewo, age, 
+             	ncol=2, nrow=2)
+
+
+	"Vamos a añadir una nueva variable isChild a nuestro modelo. Pero
+	antes haremos un estudio de esta variable para ver cual será el
+	punto de corte mejor."
+
+	categoricalResultCountBarchart <- function(data, column, categoryColumn)
+	 {
+  		survivors <- plyr::count(data, vars=c(column, categoryColumn))
+  		survivors <- group_by_(survivors, column) %>% dplyr::mutate(Percentage = round(freq * 100 / sum(freq)))
+  
+  		ggplot(data = survivors, aes_string(x = column, y = "Percentage", fill = categoryColumn)) +
+    		geom_bar(stat="identity", position = "dodge") +
+    		geom_text(aes(label=sprintf("%d\n(%d %%)", freq, Percentage)))
+	}
+
+
+	addIsChild <- function(data) 
+	{
+  		data$IsChild <- data$Age < 12
+  		data[, "IsChild"] <- as.factor(data[, "IsChild"])
+ 		return(data)
+	}
+
+
+	all <- addIsChild(all)
+	train <- all[all$PassengerId %in% train$PassengerId, ]
+	test <- all[all$PassengerId %in% test$PassengerId, ]
+
+	isChild12<-categoricalResultCountBarchart(train, "IsChild", "Survived")
+
+
+	"Ahora cambiamos a 14 el punto de corte"
+
+	addIsChild <- function(data) 
+	{
+ 	 	data$IsChild <- data$Age < 14
+  		data[, "IsChild"] <- as.factor(data[, "IsChild"])
+  		return(data)
+	}
+
+	all <- addIsChild(all)
+	train <- all[all$PassengerId %in% train$PassengerId, ]
+	test <- all[all$PassengerId %in% test$PassengerId, ]
+
+
+	isChild14<-categoricalResultCountBarchart(train, "IsChild", "Survived")
+
+	"Y comparamos ambos gráficos"
+
+	grid.arrange(isChild14, isChild12, ncol=2, nrow=1)
+
+
+	"Vemos que con 14 años la probabilidad de sobrevivir siendo niño
+	es mayor por lo que la dejaremos en este punto de corte."
+
+	categoricalResultCountBarchart(train, "IsChild", "Survived")
+
+	"Vamos a hacer ahora un estudio del precio del ticket y si sobrevivieron
+	primero con la distribución y luego con los outliers"
+
+	categoricalResultHistogram(train, "Fare", "Survived", 6)
+
+	customBoxPlot(all, "Fare", "Overall")
+
+	"Vemos que claramente hay outliers, por lo que vamos a intentar reducir estas
+	significancias."
+
+	quarter1Indexes <- function(data, column) 
+	{
+  		meta <- boxplot.stats(data[, column])
+  		q1 <- meta$stats[2]
+  		return(which(data[, column] < q1))
+	}
+
+
+	outliersMedian <- function(data, column) 
+	{
+  		meta <- boxplot.stats(data[, column])
+  		return(median(meta$out))
+	}
+
+	addFareWO <- function(data)
+	{
+ 		 data$FareWO <- data$Fare
+ 		 q1Median <- median(data$Age[quarter1Indexes(data, "Fare")])
+  		q3Median <- median(data$Age[quarter3Indexes(data, "Fare")])
+  		data$FareWO[quarter1Indexes(data, "Fare")] <- q1Median
+  		data$FareWO[quarter3Indexes(data, "Fare")] <- q3Median
+  		return(data)
+	}
+
+	all <- addFareWO(all)
+	train <- all[all$PassengerId %in% train$PassengerId, ]
+	test <- all[all$PassengerId %in% test$PassengerId, ]
+
+
+	"Obtenemos los histogramas, antes y después para ver si se mantienen 
+	lo visto anteriormente en la distribución"
+
+	fareHistogram <- customHistogram(all, "Fare", "Overall")
+	fareWOHistogram <- customHistogram(all, "FareWO", "Overall")
+
+	grid.arrange(fareHistogram, fareWOHistogram, ncol = 2)
+
+	categoricalResultHistogram(train, "FareWO", "Survived", 6)
+
+	"Vemos como se definen las diferencias pero se mantiene la distribución"
+	"Por último vamos a centrarnos en como la clase afecta en morir mo vivir."
+
+	mosaicplot(train$Pclass ~ train$Survived, 
+           	main="Muertes por clase", shade=FALSE, 
+          	color=TRUE, xlab="Pclass", ylab="Survived")
+
+	"Vemos por tanto que si el pasajero corresponde a primera clase, tendrá
+	más opciones de vivir"
+
+	"Analicemos ahora las variables Parch y Sisbsp"
+
+	mosaicplot(train$Parch ~ train$Survived, 
+           	main="Muertes por Parch", shade=FALSE, 
+           	color=TRUE, xlab="Pclass", ylab="Survived")
+
+
+	mosaicplot(train$SibSp ~ train$Survived, 
+          	 main="Muertes por SibSp", shade=FALSE, 
+           	color=TRUE, xlab="Pclass", ylab="Survived")
+
+
+	"Vemos que cuando las variables toman valor 1, es decir un hijo,
+	padre/madre, o esposa a bordo las prob de sobrevivir son mayores. Uniremos
+	estas variables en una sola que aglutine todos los miembros de la familia."
+
+	addFamilySize <- function(data) {
+  		data$FamilySize <- data$SibSp + data$Parch + 1
+  		return(data)
+	}
+
+	all <- addFamilySize(all)
+	train <- all[all$PassengerId %in% train$PassengerId, ]
+	test <- all[all$PassengerId %in% test$PassengerId, ]
+
+	"Una idea que se nos viene a la mente es estudiar la probabilidad de las
+	familias de permanecer juntas, por ello, crearemos una nueva función con 
+	el % de sobrevivir según los apellidos"
+
+	computeSurvivalRatePerColumn <- function(data, column) 
+	{
+  		rates <- plyr::count(data, vars=c(column, "Survived"))
+  		rates <- group_by_(rates, column) %>% dplyr::mutate(SurvivalRate = round(freq * 100 / sum(freq)))
+  		rates <- rates[rates$Survived == 1, ]
+ 		 rates <- rates[, which(names(rates) %in% c(column, "SurvivalRate"))]
+  		names(rates)[names(rates) == "SurvivalRate"] <- paste0("SurvivalRateBy", column)
+  		return(rates)
+	}
+
+	addSurvivalRate <- function(column, data, rateData)
+	 {
+ 		 rates <- computeSurvivalRatePerColumn(rateData, column)
+  		rateColumn <- paste0("SurvivalRateBy", column)
+  
+  		if(rateColumn %in% names(data)) 
+		{
+    			data <- data[ , -which(names(data) %in% c(rateColumn))]
+  		}
+  		data <- left_join(data, rates,by=column)
+  		data[is.na(data[, rateColumn]), rateColumn] <- 0
+  		return(data)
+	}
+
+	all <- addSurvivalRate("Surname", all, train)
+	train <- all[all$PassengerId %in% train$PassengerId, ]
+	test <- all[all$PassengerId %in% test$PassengerId, ]
+
+
+	"Otra variable que podemos añadir es si es madre para ello
+	podemos fijaremos la edad en 21 años, sexo mujer y parch>0"
+
+	addIsMother <- function(data) 
+	{
+  		data$IsMother <- data$Age > 21 & data$Sex == "female" & data$Parch > 0
+  		data[, "IsMother"] <- as.factor(data[, "IsMother"])
+  		return(data)
+	}
+
+	all <- addIsMother(all)
+	train <- all[all$PassengerId %in% train$PassengerId, ]
+	test <- all[all$PassengerId %in% test$PassengerId, ]
+
+	categoricalResultCountBarchart(train, "IsMother", "Survived")
+
+
+	"Vemos que las madres tienen mayor probabilidad de sobrevivir.
+	Otra variable que podemos añadir es si viaja solo, ya que una 
+	persona viajando sola solo tuviera que cuidar de si mismo y 
+	ofrecería mayores probabilidades de sobrevivir"
+
+	addIsAlone <- function(data)
+	{
+  		data$IsAlone <- data$Parch==0 & data$SibSp==0
+  		data[, "IsAlone"]<- as.factor(data[,"IsAlone"])
+  		return(data)
+	}
+
+	all <- addIsAlone(all)
+	train <- addIsAlone(train)
+	test <- addIsAlone(test)
+
+	categoricalResultCountBarchart(train, "IsAlone", "Survived")
+
+
+	"Vamos a crear una variable para identificar familias. Para ello, 
+	dado que dos personas de familia distintas pueden tener el mismo 
+	apellido, haremos uso también del tamaño de la familia, por lo que 
+	personas con el mismo apellido y un mismo numero de miembros de la familia
+	casi con toda probabilidad serán familiares"
+
+
+	addFamilyID <- function(data) {
+  		data$FamilyID <- paste0(data$Surname, as.character(data$FamilySize))
+  		data[, "FamilyID"] <- as.factor(data[, "FamilyID"])
+  		return(data)
+	}
+
+	all <- addFamilyID(all)
+	train <- all[all$PassengerId %in% train$PassengerId, ]
+	test <- all[all$PassengerId %in% test$PassengerId, ]
+
+
+	"Habrá algunos outliers, por lo que cuando sean menores de 3 le 
+	asignaremos familia pequeña"
+
+
+
+	MIN_FAMILY_SIZE <- 3
+
+	tooSmallFamiliesIndexes <- function(data)
+	 {
+  		return(which(data$FamilySize < MIN_FAMILY_SIZE))
+	}
+
+	addFamilyIDWO <- function(data) 
+	{
+  		data$FamilyIDWO <- paste0(data$Surname, as.character(data$FamilySize))
+  		data$FamilyIDWO[tooSmallFamiliesIndexes(data)] <- paste0("FamilySize<", toString(MIN_FAMILY_SIZE))
+  		data[, "FamilyIDWO"] <- as.factor(data[, "FamilyIDWO"])
+  		return(data)
+	}
+
+	all <- addFamilyIDWO(all)
+	train <- all[all$PassengerId %in% train$PassengerId, ]
+	test <- all[all$PassengerId %in% test$PassengerId, ]
+
+	all <- addSurvivalRate("FamilyIDWO", all, train)
+	train <- all[all$PassengerId %in% train$PassengerId, ]
+	test <- all[all$PassengerId %in% test$PassengerId, ]
+
+
+	"Vamos a realizar un estudio de la cabina para intentar lidiar con los valores
+	perdidos"
+
+
+	extractDeck <- function(cabin) {
+  		return(toString(unique(strsplit(cabin, "[^A-Z]+")[[1]])))
+	}
+
+	addDeck <- function(data) {
+  		data$Deck <- sapply(data$Cabin, extractDeck)
+  		data[, "Deck"] <- as.factor(data[, "Deck"])
+  		return(data)
+	}
+
+	all <- addDeck(all)
+	train <- all[all$PassengerId %in% train$PassengerId, ]
+	test <- all[all$PassengerId %in% test$PassengerId, ]
+
+	countBarchart(train, "Deck", "Overall")
+
+
+	categoricalResultCountBarchart(train, "Deck", "Survived")
+
+	"Vamos a ver si quizá pasajeros que compartan el ticket también comparten
+	la cabina."
+
+	normalizeList <- function(elems) 
+	{
+ 		elems <- unique(elems)
+  		elems <- elems[!is.na(elems)]
+  		s <- paste(elems, collapse = " ")
+  		if(str_length(trimws(s)) == 0) {
+    		s <- NA
+ 		}
+  		return(s)
+	}
+
+	cabins <- all[with(all, order(Ticket)), which(names(all) %in% c("Ticket", "Cabin"))]
+	cabins <- cabins %>%
+  	group_by(Ticket) %>%
+  	summarise(Cabin = list(Cabin))
+	cabins$Cabin <- sapply(cabins$Cabin, normalizeList)
+
+	ticketsMissngCabinRows <- nrow(cabins[is.na(cabins$Cabin), ])
+
+	"Parece ser que no. Una posibilidad será añadir la cabina an 
+	en función de la clase."
+
+
+	"Análisis del ticket"
+
+
+	aggregateFunction <- function(s) 
+	{
+ 	 	return(paste(s, collapse = " ~ "))
+	}
+
+	tickets <- train[with(train, order(Ticket)), which(names(train) %in% c("Ticket", "Name", "Surname", "Title", "Sex"))]
+	tickets <- tickets %>%
+  	group_by(Ticket) %>%
+  	summarise(Names = aggregateFunction(Name), 
+            	Surnames = aggregateFunction(Surname), 
+            	Titles = aggregateFunction(Title), 
+            	Genders = aggregateFunction(Sex),
+            	People = n())
+	tickets <- tickets[tickets$People > 1, ]
+
+	all <- addSurvivalRate("Ticket", all, train)
+	train <- all[all$PassengerId %in% train$PassengerId, ]
+	test <- all[all$PassengerId %in% test$PassengerId, ]
+
+\end{lstlisting}
+
+Algunas partes interesantes del anterior script están sin duda en la hora de discernir la edad de un niño para ser considerado como tal, y en la obtención de la característica \textbf{isMother}. En la primera se llevaron a cabo varios puntos de corte y se obtuvo gráficos de comparación como el que podemos ver en la figura \ref{nino1}, em ella vemos como cuando la edad toma 14 años en lugar de 12, esta ofrece una mayor posibilidad de vivir a los que son niños, por lo que la fijaremos en ese punto. 
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.35]{./Capitulo2/imagenes/ninio1.png}
+		\caption{Distribución de la variable para 14 y 12 años respectivo.}
+	\label{nino1}
+\end{figure} 
+
+Por otro lado, la inclusion de la variable \textbf{isMother} ofrecerá grandes resultados en nuestro proceso de clasificación, solo tenemos que hacer referencia al gráfico \ref{mother} para comprobar que esto es así. 
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.35]{./Capitulo2/imagenes/mother.png}
+		\caption{Probabilidad de morir o vivir siendo madre.}
+	\label{mother}
+\end{figure} 
+
+A modo de resumen, en el script anterior se han obtenido 10 nuevas variables:
+
+\begin{enumerate}
+	\item \textbf{Title}: El título que una persona ostenta (Mr, Sr, Dr).
+	\item \textbf{TitleWO}: Título reuniendo los menos representativos como \textbf{raros}.	
+	\item \textbf{FamilySize}: El número de personas que forman la familia. 
+	\item \textbf{Surname}: El apellido de la familia. 
+	\item \textbf{FamilyId} : FamilySize+Surname o Small si la familia tiene menos de 3 personas para que la variable no crezca mucho. 
+	\item \textbf{isMother}: Nos dice si una mujer es madre, para ello debe tener 21 años o más e ir viajando con un niño con el mismo apellido. 
+	\item \textbf{AgeWO}: Edad reuniendo los valores poco comunes por por la media de su cuartil.
+	\item \textbf{isChild}: 0 si edad es mayor o igual de 14 años, 1 si es menor. 
+	\item \textbf{FareWO}: Precio del ticket sin outliers.
+	\item \textbf{IsAlone}: Variable que representa si una persona está viajando sola.  
+\end{enumerate}
+
+Con estas nuevas variables sin lugar a dudas nuestro proceso de aprendizaje tendrá más factores a tener en cuenta y podrá predecir la clase objetivo con mayor eficacia. En la próxima sección estudiaremos como comenzar a crear los primeros modelos predictivos. 
+
+\section{Primeros modelos basados en reglas}
+
+Para hacer notar la potencia del proceso de preprocesado y exploración en el área de la ciencia de datos, antes de entrar a usar algoritmos complejos de clasificación para abordar el problema, intentaremos en base a el conocimiento obtenido en la sección \ref{1}, realizar clasificación \textit{a mano} para ver que tal se comportan nuestras presunciones en la competición. 
+
+Nos basaremos en transformaciones simples sobre el conjunto de test, del tipo: \textit{\textbf{si sexo=mujer entonces sobrevive = true sino false}}. Para aplicar estas reglas de manera muy sencilla usaremos la herramienta Knime, que además nos permitirá crear una batería de transformaciones y probarlas todas a modo de experimento. 
+
+\subsection{Modelo 1}
+\label{modelo1}
+Parece un resultado trágico. Pero atendiendo al gráfico \ref{fig_survived}, una gran mayoría no sobrevivió al accidente por lo que si nuestro objetivo es predecir si vivirá o muere, si siempre aplicamos Survived=0, acertaremos como poco en el 60\% de las ocasiones al estar esta clase en mayoría. Tras crear nuestro flujo en Knime (Fig. \ref{fig_6}) que añade al conjunto de test una columna Survived con valor constante 0 y subir los resultados a Kaggle obtenemos un resultado de accuracy del \textbf{0.61}.
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.7]{./Capitulo2/imagenes/6.png}
+		\caption{Flujo de la primera predicción en Knime.}
+	\label{fig_6}
+\end{figure} 
+
+
+\subsection{Modelo 2}
+
+Atendiendo al gráfico \ref{distri1}, podemos ver como una mayor proporción de hombres muere frente a las mujeres cuya tendencia es de sobrevivir. Atendiendo también a datos históricos sabemos que se puso a salvo primero a las mujeres, por lo que una predicción que podemos hacer a mano sería asignar por medio de nodos de RuleEngine en Knime esta regla. Es decir, \textit{if Sex=Female then Survived=1} y por otro lado \textit{if Sex=Male then Survived=0}. Con esta simple observación obtenemos un accuracy en la competición de \textbf{0.7655}. 
+
+\subsection{Modelo 3}
+\label{modelo3}
+
+Los gráficos son útiles para ver como mucho relacione entre dos de una manera clara, pero ¿Qué pasa si queremos añadir alguna de las variables anteriores teniendo ya por tanto 3 en nuestro modelo? Una manera fácil para ver las proporciones es usar la función \textit{textbf{aggregate()}} que nos ofrecerá una tabla de proporciones en función de las variables que le pasemos como objetivo. Un ejemplo lo encontramos en este comando en R:
+
+\begin{lstlisting}
+
+    aggregate(Survived ~ Fare2 + Pclass + Sex, data=titanic2, FUN=function(x) {sum(x)/length(x)})
+
+\end{lstlisting}
+
+El resultado de la instrucción anterior es la combinación de todas las variables y podemos verlo en la figura \ref{agregacion1}. Si estudiamos esta figura, podemos encontrar ante nuestra sorpresa que hay una fracción de mujeres, concretamente las de clase 3 que pagan más de 20 dólares por su billete que con toda probabilidad muere en el accidente. Tendremos que hacer por tanto una nueva regla que implica lo siguiente: \textit{if Sex=Male then Survived=0}, \textit{if Sex=Female then Survived=1} y por último \textit{if Sex = Female y Pclass=3 y Fare2>20 then survived=0}.
+
+\begin{figure}[h]
+	\centering
+		\includegraphics[scale=0.5]{./Capitulo2/imagenes/agregacion1.png}
+		\caption{Agregación de Fare2, Pclass y Sex.}
+	\label{agregacion1}
+\end{figure} 
+
+
+\subsection{Modelo 4}
+
+Es momento de recuperar nuestra anterior variable Child, de la cual afinamos el valor de corte para así comenzar a 'salvar' algunos hombres. Ejecutamos el siguiente comando en R:
+
+\begin{lstlisting}
+
+    aggregate(Survived ~ isChild + FareCategoric + Pclass + Sex, data=titanic2, FUN=function(x) {sum(x)/length(x)})
+
+\end{lstlisting}
+
+\begin{figure}
+	\centering
+		\includegraphics[scale=0.5]{./Capitulo2/imagenes/agregacion2.png}
+		\caption{Agregación de Fare2, Pclass y Sex.}
+	\label{agregacion2}
+\end{figure} 
+
+El resultado de la instrucción anterior es una tabla con todas las combinaciones posibles entre las variables dadas, podemos ver un fragmento de esta tabla que resulta especialmente  interesante en la figura \ref{agregacion2}, ya que la tabla entera comienza a ser inmanejable. En esta tabla vemos por tanto como los niños de segunda clase se salvan, por lo que ya tenemos más información para una nueva regla que implicaría cumplir la regla del modelo \ref{modelo3}, pero añadiendo Survived=1 para hombres menores de 14 años y clase 2, tras lo cual tendremos un accuracy en test de \textbf{0.78600}. 
+
+
+
+Podemos ver como este proceso aunque efectivo se ha hecho inmanejable rápidamente, ya que la tabla de resultados crece exponencialmente a mediada que añadimos alguna nueva variable, por lo tanto, debemos usar técnicas de machine learning que nos ayuden en esta ardua labor y esto es lo que veremos en el capítulo \ref{clasificacion}.
+
+\pagebreak
+
+\clearpage
+%---------------------------------------------------

@@ -786,27 +786,6 @@ ConditionalInferenceBuilder <- function() {
   return(list(name=name, model=model, predictions=predictions, probabilities=probabilities))
 }
 
-SVMBuilder <- function(fml, data) {
-  name = "SVM (e1071)"
-  
-  model = function(fml, data) {
-    set.seed(345)
-    return(svm(formula(fml), data = data, probability=TRUE))
-  }
-  
-  predictions = function(model, data) {
-    return(stats::predict(model, newdata = data, type = "class"))
-  }
-  
-  probabilities = function(model, data) {
-    result <- stats::predict(model, newdata = data, probability=TRUE)
-    return(attr(result, "probabilities")[, 2])
-  }
-  
-  return(list(name=name, model=model, predictions=predictions, probabilities=probabilities))
-}
-
-
 "Creamos funciones para la evaluación en training de los clasificadores"
 
 
@@ -842,6 +821,31 @@ evaluateModel <- function(fml, ModelBuilder, predictionColumn, trainData, testDa
 }
 
 
+evaluateModels <- function(formulas, ModelBuilders, predictionColumn, data, testData = NULL) {
+  set.seed(3456)
+  if(is.null(testData)) {
+    trainIdx <- createDataPartition(data$Survived, p = 0.6, list = FALSE, times = 1)
+    trainData <- data[trainIdx,]
+    testData <- data[-trainIdx,]
+  } else {
+    trainData <- data
+  }
+  
+  evaluations <- data.frame(model = character(), 
+                            formula = character(), 
+                            accuracy = numeric(0), 
+                            fmeasure = numeric(0), 
+                            stringsAsFactors=FALSE)
+  
+  for (ModelBuilder in ModelBuilders) {
+    for (fml in formulas) {
+      evaluation <- evaluateModel(fml, ModelBuilder, predictionColumn, trainData, testData)
+      evaluations <- bind_rows(evaluations, evaluation)
+    }
+  }
+  renderTable(evaluations)
+}
+
 
 trainIdx <- createDataPartition(train$Survived, p = 0.6, list = FALSE, times = 1)
 trainData <- train[trainIdx,]
@@ -861,6 +865,10 @@ testData <- addSurvivalRate("FamilyID", testData, trainData)
 trainData <- addSurvivalRate("FamilyIDWO", trainData, trainData)
 testData <- addSurvivalRate("FamilyIDWO", testData, trainData)
 
+
+"Creamos distintas fórmulas de combinaciones para ver cuales son las que 
+mejor se comportan a la hora de entrenar el modelo"
+
 formulas <- c(Survived ~ Sex,
               Survived ~ Sex + Age,
               Survived ~ Sex + Age + Fare,
@@ -874,13 +882,18 @@ formulas <- c(Survived ~ Sex,
               Survived ~ Sex + AgeWO + Fare + Pclass + FamilySize + Embarked + TitleWO,
               Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO,
               Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild,
-              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother)
+              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother
+              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother + IsAlone)
 
-models <- c(RandomForestBuilder, SVMBuilder)
+models <- c(RandomForestBuilder)
 
 
 evaluateModel( Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother,
                RandomForestBuilder, "Survived", trainData, testData)
+
+
+evaluateModels(formulas, models, "Survived", trainData, testData)
+
 
 
 
@@ -937,13 +950,30 @@ generateAllROCs <- function(formulas, ModelBuilders, trainData, testData) {
   ggplot() + rocPlots + coord_fixed()
 }
 
-formulas <- c(Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + TitleWO,
-              Survived ~ Sex + AgeWO + Fare + Pclass + FamilySize + Embarked + TitleWO)
+formulas <- c(Survived ~ Sex,
+              Survived ~ Sex + Age,
+              Survived ~ Sex + Age + Fare,
+              Survived ~ Sex + Age + Fare + Pclass,
+              Survived ~ Sex + Age + Fare + Pclass + SibSp,
+              Survived ~ Sex + Age + Fare + Pclass + SibSp + Parch,
+              Survived ~ Sex + Age + Fare + Pclass + FamilySize,
+              Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked,
+              Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + Title,
+              Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + TitleWO,
+              Survived ~ Sex + AgeWO + Fare + Pclass + FamilySize + Embarked + TitleWO,
+              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO,
+              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild,
+              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother,
+              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother + IsAlone)
 
 models <- c(RandomForestBuilder)
 
-generateAllROCs(formulas, models, trainData, testData)
 
+"Dado que estamos ante un problema con una clase en clara minoria, quizá basarnos
+solo en el Acc sea muy optimista a la hora de evaluar por ello, nos basaremos también
+en la curva ROC evitando el sesgo hacia la clase mayoritaria."
+
+generateAllROCs(formulas, models, trainData, testData)
 
 "EVALUACIÓN TEST"
 

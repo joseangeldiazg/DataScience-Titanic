@@ -1,0 +1,42 @@
+%---------------------------------------------------
+% Nombre: capitulo2.tex  
+% 
+% Texto del capítulo 2
+%---------------------------------------------------
+
+\chapter{ANEXO I}
+\label{anexo}
+
+En este Anexo, podemos encontrar la tabla con los resultados obtenidos en las distintas entregas a Kaggle, el número de resultados no coincide al 100\% con los subidos a Kaggle, dado que a petición del profesor de teoría, Francisco Herrera, se realizó una batería de experimentos sobre el problema con el algoritmo XGBoost, tras lo cual solo alguna de estas entregas con el algoritmo fueron incluidas a la tabla final. 
+
+
+% Please add the following required packages to your document preamble:
+% \usepackage{graphicx}
+% \usepackage[normalem]{ulem}
+% \useunder{\uline}{\ul}{}
+\begin{table}[]
+\centering
+\caption{My caption}
+\label{my-label}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{|l|l|l|l|l|l|}
+\hline
+\multicolumn{1}{|c|}{{\ul \textit{\textbf{Sol}}}} & \multicolumn{1}{c|}{{\ul \textit{\textbf{Preprocesado}}}} & {\ul \textit{\textbf{Algoritmos}}} & {\ul \textit{\textbf{Acc Test}}} & {\ul \textit{\textbf{Acc Training}}} & {\ul \textit{\textbf{Pos}}} \\ \hline
+1 & Ninguno & Asumimos todos mueren & 0.61 & 0.616 & 6429 \\ \hline
+2 & Ninguno & \begin{tabular}[c]{@{}l@{}}Asumimos que solo\\ viven las mujeres\end{tabular} & 0.7655 & 0.7867 & 4781 \\ \hline
+3 & Ninguno & \begin{tabular}[c]{@{}l@{}}Todos los hombres y \\ las mujeres de tercera \\ clase con \textgreater20 de Fare\\ mueren, las demás viven.\end{tabular} & 0.77990 & 0.8080 & 2877 \\ \hline
+4 & Creada variable isChild & \begin{tabular}[c]{@{}l@{}}Ademas de lo anterior,\\ niños de 2 clase viven.\end{tabular} & 0.78600 & 0.8181 & 3259 \\ \hline
+ &  &  &  &  &  \\ \hline
+ &  &  &  &  &  \\ \hline
+ &  &  &  &  &  \\ \hline
+9 & \begin{tabular}[c]{@{}l@{}}Añadidas nuevas características\\ Eliminado outliers, eliminados \\ valores perdidos\end{tabular} & Random Forest & 0.82297 & 0.88431 & 218 \\ \hline
+ &  &  &  &  &  \\ \hline
+\end{tabular}%
+}
+\end{table}
+
+
+\pagebreak
+
+\clearpage
+%---------------------------------------------------

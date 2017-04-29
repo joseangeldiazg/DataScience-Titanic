@@ -1,0 +1,551 @@
+%?????????????????????????
+% Nombre: capitulo3.tex  
+% 
+% Texto del capitulo 3
+%---------------------------------------------------
+
+\chapter{Clasificación}
+\label{clasificacion}
+
+Como hemos visto antes es posible ir añadiendo variables a nuestras tablas y obtener reglas al respecto, pero esto se complica a medida que nuevas variables son añadidas de manera que se hace inmanejable. Algunos algoritmos de aprendizaje como los arboles de decisión realizan esta ardua labor por nosotros por lo que podemos apoyarnos en ellos para obtener mejores resultados y aumentar aún más el accuracy en nuestro clasificador. Esta tarea es la que aborda este capítulo. 
+
+
+\section{Clasificadores en Knime}
+
+Antes de ponernos a utilizar clasificadores e instalar paquetes sin criterio alguno en R, cabe quizá dedicar unos minutos a hacer una comparativa de clasificadores para después centrarnos en el uso de uno de estos en R de manera que podamos obtener toda la potencia de esta herramienta. Para este menester, ya que hemos usado Knime en la anterior sección, usaremos algunos de los algoritmos que Knime recoge para clasificar el problema, tras ello, haremos una comparativa de los resultados y los que nos ofrezcan mejor resultados serán los que trasladaremos a R. 
+
+En la figura \ref{clasificadores} podemos encontrar el flujo de Knime usado. 
+
+\begin{figure}[h]
+	\centering
+		\includegraphics[scale=0.7]{./Capitulo3/imagenes/clasificadores.png}
+		\caption{Distintos algoritmos de clasificación usados.}
+	\label{clasificadores}
+\end{figure} 
+
+Los clasificadores usados han sido los siguientes:
+
+\begin{itemize}
+
+	\item \textbf{\textit{Naïve Bayes}} \cite{naive}: Es el algoritmo más sencillo tratado dado su carácter probabilístico. Como su propio nombre indica, está basado en el teorema de Bayes y su comportamiento es bastante aceptable cuando trabajamos con datos discretos. Su fundamento está en asumir la independencia de cada una de las características tratadas, obteniendo la probabilidad de pertenencia a cada clase en base a cada una de las características por separado. Estas a su vez serán combinadas obteniendo el resultado final. 
+	
+	\item \textbf{\textit{MLP-BP}} \cite{mlp}: Este algoritmo está basado en redes neuronales artificiales y su fundamento está en la utilización de neuronas (objeto lógico) con diversas entradas a partir de las cuales se realizan sumas ponderadas que unidas a algún tipo de función producen una salida que puede volver a ser la entrada de otra neurona formando así nuestra red neuronal. MLP consta de varias capas una de entrada que tiene tantas neuronas como variables a tener en cuenta en la clasificación, una oculta que realiza el procesamiento y una capa de salida con una neurona por cada una de las clases posibles a tener en cuenta. Para poder usar este algoritmo se ha realizado un preprocesado con el cual pasamos a variables continuas las categóricas, el flujo para llevar a cabo este preprocesado podemos verlo en la figura \ref{nn}.
+		
+	
+	\item \textbf{\textit{SMO}} \cite{smo}: Este algoritmo está basado en \textit{Support Vector Machines}. Los algoritmos de este grupo, son algunos de los más potentes en el campo del aprendizaje supervisado y consisten en construir hiperplanos en un espacio de dimensionalidad muy alta de manera que al haber llevado los datos a estas dimensiones tan grandes la separación entre ellos permita realizar una buena clasificación de una nueva instancia que se agrupará a una de las clases. 
+		
+	\item \textbf{\textit{C4.5}} \cite{c45}: Es una extensión del algoritmo ID3 \cite{id3} y está basado en árboles de decisión. Estos árboles se construyen en base a unos datos de entrenamiento usando el concepto de entropía de la información. En base a este concepto, se van eligiendo atributos de los disponibles en los datos de entrenamiento para ir dividiendo en cada nodo del árbol las muestras a clasificar, de este modo en las hojas del árbol tendremos las muestras finales clasificadas.
+	
+	\item \textbf{\textit{RandomForest}}: Este algoritmo es un ensemble de Arboles de decisión. Los ensembles funcionan por votaciones, es decir, se generan arboles de decisión para distintas variables y ante un ejemplo concreto si hay tres arboles que lo barajan y 2 dicen que sobrevive se tomará  como que este ejemplo sobrevive. Los RandomForest tienen una ventaja y es que evitan el problema del sobre-entrenamiento. Esto lo consiguen añadiendo aleatoriedad al conjunto dos formas distintas: mediante el bagging lo que generamos es que los arboles se generan con conjuntos de muestras aleatorias en cada vez. Podemos estimar que se dejan fuera un 37\% de las muestras  y que algunas serán incluso repetidas. Por otro lado, el segundo factor para añadir aleatoriedad es la selección de variables, mediante la cual los arboles generados van cambiando las variables que toman para predecir.
+	
+\end{itemize}
+
+\begin{figure}[h]
+	\centering
+		\includegraphics[scale=0.7]{./Capitulo3/imagenes/nn.png}
+		\caption{Preprocesado para redes neuronales.}
+	\label{nn}
+\end{figure} 
+
+Potro otro lado, para prevenir el posible problema del sobre-entrenamiento hemos llevado a cabo para cada uno de los clasificadores una validación cruzada con k=10 submuestras, este flujo es facilitado por Knime en el metanodo \textit{\textbf{CrossValidation}}, cuyo contenido podemos verlo en la figura \ref{cross}. Una vez creado nuestro flujo en Knime y ejecutarlo obtenemos los resultados de los clasificadores los cuales podemos encontrarlos en la tabla \ref{tabla_resultados}.  
+
+\begin{figure}[h]
+	\centering
+		\includegraphics[scale=0.7]{./Capitulo3/imagenes/cross.png}
+		\caption{Detalle del nodo de cross validation.}
+	\label{cross}
+\end{figure} 
+
+\begin{table}[]
+\centering
+\label{tabla_resultados}
+\begin{tabular}{cc}
+{\ul \textbf{Algoritmo}}               & {\ul \textbf{Accuracy}} \\
+C4.5 (Decision Tree)                   & 0.79807                 \\
+Näive Bayes (Probabilistic)            & 0,80022                 \\
+MLP (Neural Network)                   & 0,82493                 \\
+SMO (Support Vector Machine)           & 0,70146                 \\
+Random Forest (Decision Tree Ensemble) & 0,8353                 
+\end{tabular}
+\caption{Resultados de la clasificación para distintos algoritmos}
+\end{table}
+
+Podemos comprobar que parece ser que un RandomForest, será nuestra mejor opción, pero si nos fijamos en la figura \ref{fig_survived}, encontramos de nuevo que las clases están bastante desequilibradas, lo que puede hacer que nuestro sistema se comporte de manera errónea a la hora de evaluar. Retomemos el ejemplo del modelo 1 (sección \ref{modelo1}), es decir, no realizar ninguna clasificación y asignar la clase mayoritaria a todos los ejemplos. En nuestro problema ya causaba el que tuviéramos un \textbf{Accuracy de 0.60} cuando en realidad no estábamos clasificando nada, imaginar por un momento que pasaría si aplicáramos este sistema clasificador a un sistema experto que predice la existencia o no de  una enfermedad en la que tenemos 99 personas sanas por cada persona enferma? ¿0.99 de Accuracy? Nada más lejos de la realidad, hay casos en los que esto sucede y en los que deberemos ponderar un fallo en la clase negativa por encima de los aciertos en la clase positiva o viceversa en función de lo que estemos intentando clasificar. 
+
+Teniendo en tanto por cuenta que en nuestro problema tenemos una clase en clara minoría y con el fin de intentar afinar en el proceso de elección de nuestro clasificador utilizaremos un método de evaluación alternativo como es el caso de la \textit{curva ROC}, método interesante y que nos ofrecerá resultados más fiables que evitan el sesgo hacia la clase mayoritaria que se dan en otros métodos. Las curvas ROC y su correspondientes áreas bajo la curva de los clasificadores usados podemos verlas en las figuras \ref{roc1}, \ref{roc2}, \ref{roc3}, \ref{roc4}.
+
+
+\begin{figure}
+	\centering
+		\includegraphics[scale=0.3]{./Capitulo3/imagenes/roc1.png}
+		\caption{Curva ROC para árboles de decisión.}
+	\label{roc1}
+\end{figure} 
+
+\begin{figure}
+	\centering
+		\includegraphics[scale=0.3]{./Capitulo3/imagenes/roc2.png}
+		\caption{Curva ROC para Näive Bayes.}
+	\label{roc2}
+\end{figure} 
+
+\begin{figure}
+	\centering
+		\includegraphics[scale=0.3]{./Capitulo3/imagenes/roc3.png}
+		\caption{Curva ROC para SMO.}
+	\label{roc3}
+\end{figure} 
+
+\begin{figure}
+	\centering
+		\includegraphics[scale=0.3]{./Capitulo3/imagenes/roc4.png}
+		\caption{Curva ROC para Random Forest.}
+	\label{roc4}
+\end{figure} 
+
+
+Dado los resultados de los valores de Accuracy y tras constatar que estos se ajustan a la realidad con el análisis de la curva ROC y su área bajo la curva  nos centraremos en \textbf{RandomForest} de cara a las predicciones para la competición. Pasaremos de nuevo a R ya que nos ofrece más facilidad para crear el fichero tipo que Kaggle acepta en las competiciones y nos ofrece la posibilidad de evaluar fácilmente sobre el conjunto de Test que debemos subir a Kaggle para su evaluación.
+
+\section{RandomForest}
+\label{forest}
+
+Para poder seguir subiendo posiciones en la competición nos centraremos por tanto en el uso de \textit{\textbf{RandomForest}} en Rstudio. El script que usaremos podemos encontrarlo en las siguientes líneas, sobre este mismo script se han realizado a modo de comentarios las explicaciones del código para facilitar al lector la comprensión de cada uno de los pasos y decisiones tomadas. 
+
+\begin{lstlisting}
+          
+          "Vamos a trabajar con RandomForest. Este es un ensemble de arboles de
+         decisión. Los ensembles funcionan por votaciones, es decir, se generan 
+         arboles de decisión para distintas variables y ante un ejemplo concreto si
+         hay tres arboles que lo barajan y 2 dicen que sobrevive se tomará como
+         que este ejemplo sobrevive. Los RandomForest tienen una ventaja y es que
+         evitan el problema del sobreentrenamiento. Esto lo consiguen añadiendo
+         aleatoriedad al conjunto de la siguiente manera:
+    
+      -Bagging: Mediante el bagging lo que generamos es que los arboles se generan
+    con conjuntos de muestras aleatorias en cada vez. Podemos estimar que se dejan
+    fuera un 37% de las muestras y que algunas serán incluso repetidas.
+    
+      -Selección de variables: Los árboles generados van cambiando las variables
+    que toman para predecir."
+    
+    
+    "Para afinar las variables que usaremos en el proceso de entrenamiento del 
+    algoritmo podemos usar las siguientes sentencias que nos ofrecerán información
+    de como se reduce el error según el facto mTry"
+    
+    mtryTunning <- function(data) 
+    {
+  		set.seed(345)
+ 		 suppressMessages(mtry <- tuneRF(data[, names(data) %in% attr(terms(fml), "term.labels")],
+                                  data[, names(data) %in% c("Survived")],
+                                  stepFactor=3.0,
+                                  improve=1e-8,
+                                  ntree=500,
+                                  trace=FALSE))
+  		return(mtry)
+	}
+
+	fml <-Survived ~ Sex + Age + Fare + Pclass + SibSp + Parch + FamilySize + Embarked + TitleWO
+	print(mtryTunning(train))
+    
+    	"Podemos ver como este valor estará entre 1 y 3"
+    
+  	"Comenzamos con el RandomForest de R"
+      
+    	fit <- randomForest(as.factor(Survived) ~ Pclass + Sex + Age + SibSp + Parch + Fare +
+                    Embarked,
+                    data=train,
+                    importance=TRUE,
+                    ntree=2000)
+
+	varImpPlot(fit)
+
+	Prediction <- predict(fit, test)    
+    	submit <- data.frame(PassengerId = test$PassengerId, Survived = Prediction)
+    
+    	write.csv(submit, file = "output.csv", row.names = FALSE)
+    
+    #MODELO CON ACCURACY 0.78469
+
+    "********************************************************************************"
+    
+   	 "Parece que funciona bien pero ahora añadiremos nuevos factores como las variables 
+    generadas anteriormente en nuestro preprocesado."
+    
+    	fit <- randomForest(as.factor(Survived) ~ Pclass + Sex + Age + SibSp + Parch + Fare +
+                    Embarked+IsChild+IsMother+Title,
+                    data=train,
+                    importance=TRUE,
+                    ntree=2000)
+
+	varImpPlot(fit)
+    
+    	"Los resultados son similares al punto anterior, aunque title es la mejor variable tal y como 
+    vemos en el gráfico, las demás que hemos introducido quizá introducen ruido  y no aportan nada. "
+    
+    "********************************************************************************"
+    
+    	"Vamos a usar los paquetes de la libreria rparty para nuestro RandomForest y solo usaremos
+    la variable Title de las nuevas."
+    
+    	set.seed(345)
+		fit <- cforest(as.factor(Survived) ~ Pclass + Sex + Age + SibSp + Parch + Fare +
+                 	Embarked + Title,
+               		data = train, 
+               		controls=cforest_unbiased(ntree=2000, mtry=3))
+		
+	#MODELO CON ACCURACY 0.79904	
+	
+	Prediction <- predict(fit, test, OOB=TRUE, type = "response")
+	submit <- data.frame(PassengerId = test$PassengerId, Survived = Prediction)
+	
+     "********************************************************************************"	
+    	 "Ahora vamos a comprobar que tal se comporta el modelo con nuestras variables sin outliers."
+	
+	set.seed(345)
+		fit <- cforest(as.factor(Survived) ~ Pclass + Sex + AgeWO + SibSp + Parch + FareWO +
+                 	Embarked + Title,
+               		data = train, 
+               		controls=cforest_unbiased(ntree=2000, mtry=3))
+		
+	#MODELO CON ACCURACY 0.80383	
+	
+	Prediction <- predict(fit, test, OOB=TRUE, type = "response")
+	submit <- data.frame(PassengerId = test$PassengerId, Survived = Prediction)
+    
+    "*********************************************************************************"
+    
+    fit <- cforest(as.factor(Survived) ~ Pclass + Sex + Age + SibSp + Parch + Fare +
+               Embarked + Title + FamilySize + FamilyID,
+               data = train, 
+               controls=cforest_unbiased(ntree=2000, mtry=3))
+
+	Prediction <- predict(fit, test, OOB=TRUE, type = "response")
+
+	submit <- data.frame(PassengerId = test$PassengerId, Survived = Prediction)
+	
+	#MODELO CON ACCURACY 0.8134
+    
+    \end{lstlisting}
+
+
+Algunas salidas interesantes del anterior código podría ser la que podemos ver en la figura \ref{split}, que corresponde con la función \textbf{\textit{varImpPlot(fit)}} en ella podemos comprobar como las variables de nuestro árbol de decisión se comportan y hacen aumentar el Accuracy de este a medida que este avanza su entrenamiento. Esto es útil para ver que variables son realmente importantes en nuestro proceso de entrenamiento y en ella hemos podido comprobar como a pesar de lo que pensábamos en puntos anteriores las variables \textbf{IsMother} e \textbf{IsChild}, no ofrecerán mucho de cara a entrenar el modelo si lo comparamos con la variable \textbf{Title} por ejemplo que es la que más afecta. 
+
+\begin{figure}[h]
+	\centering
+		\includegraphics[scale=0.7]{./Capitulo3/imagenes/split.png}
+		\caption{Comportamiento variables en el RandomForest.}
+	\label{split}
+\end{figure} 
+
+De la manera que hemos visto en esta sección, podremos construir modelos muy útiles, de hecho, hemos llegado a obtener el valor de 0.8134, pero aun estos valores se pueden mejorar. Para ello, construiremos modelos avanzados y con parámetros muy afinados del algoritmo RandomForest, siguiendo el tutorial de  Marcio Gualtieri \cite{marcio}. 
+
+\section{HyperTunned Random Forest}
+
+En esta sección veremos un modelo avanzado de RandomForest y obtendremos el resultado final de la competición que está en 0.82297 de accuracy en test y posición 218. Explicaremos el script seguido como es ya habitual en los comentarios del mismo. 
+
+\begin{lstlisting}
+
+	"Creamos constructores para cada uno de los métodos que usaremos."
+
+	RandomForestBuilder <- function() 
+	{
+  		mtry = 1
+  
+  		name = paste("Random Forest (randomForest) mtry:", mtry)
+  
+  		model = function(fml, data) {
+    		
+		set.seed(345)
+    		numVars <- length(attr(terms(fml), "term.labels"))
+    		maxMtry <- floor(sqrt(numVars))
+    
+    		if (mtry > maxMtry) {
+      			return(randomForest(formula(fml), data = data))
+    		}
+    		
+		return(randomForest(formula(fml), data = data, mtry = mtry))
+ 	 	}
+  
+  		predictions = function(model, data) 
+		{
+    			return(stats::predict(model, newdata = data, type = "class"))
+  		}
+  
+  		probabilities = function(model, data) 
+		{
+   		 	result <- predict(model, newdata=data, type="prob")
+   		 	return(result[, 2])
+ 	 	}
+  
+  		return(list(name=name, model=model, predictions=predictions, probabilities=probabilities))
+	}
+
+	RandomForestRandomCVBuilder <- function() {
+  		name = "Random Forest with Random Search Cross Validation (rpart)"
+  
+  		model = function(fml, data) 
+		{
+    			set.seed(345)
+    			return(randomForestRandomCrossValidation(fml, data, "Accuracy", radius=10, repeats=3))
+  		}
+  
+  		predictions = function(model, data) {
+    		return(stats::predict(model, newdata = data, type = "raw"))
+  	}
+  
+  	probabilities = function(model, data) 
+	{
+    		result <- predict(model, newdata=data, type="prob")
+    		return(result[, 2])
+  	}
+  
+  	return(list(name=name, model=model, predictions=predictions, probabilities=probabilities))
+	}
+
+	DecisionTreeBuilder <- function()
+	 {
+  		name = "Decision Tree (rpart)"
+  
+  			model = function(fml, data) {
+    				set.seed(345)
+    				return(rpart(fml, data = data, method="class"))
+  			}
+  
+  		predictions = function(model, data) {
+    			return(stats::predict(model, newdata = data, type = "class"))
+  		}
+  
+ 		 probabilities = function(model, data) {
+    			result <- predict(model, newdata=data, type="prob")
+    			return(result[, 2])
+  		}
+  
+  	return(list(name=name, model=model, predictions=predictions, probabilities=probabilities))
+	}
+
+	ConditionalInferenceBuilder <- function() 
+	{
+  		mtry = 1
+  
+  		name = paste("Conditional Inference Forest (party) mtry: ", mtry)
+  
+  		model = function(fml, data) {
+    			set.seed(345)
+    
+    			numVars <- length(attr(terms(fml), "term.labels"))
+    			maxMtry <- floor(sqrt(numVars))
+    
+   		 	if (mtry > maxMtry) {
+      				return(cforest(fml, data = data, controls=cforest_unbiased()))
+    			}
+    			return(cforest(fml, data = data, controls=cforest_unbiased(mtry = mtry)))
+  		}
+  
+  		predictions = function(model, data) {
+   			 return(stats::predict(model, newdata = data, type = "response"))
+  		}
+  
+  		probabilities = function(model, data) {
+    			result <- predict(model, newdata=data, type="prob")
+    			result <- lapply(result, `[`, 2)
+    			return(result)
+  		}
+  
+  	return(list(name=name, model=model, predictions=predictions, probabilities=probabilities))
+	}
+
+
+	"Creamos funciones para la evaluación en training de los clasificadores"
+
+
+	fmeasure <- function(confusion) 
+	{
+  		p <- confusion$byClass["Pos Pred Value"]
+  		r <- confusion$byClass["Sensitivity"]
+  		f <- 2 * ((p * r) / (p + r))
+  		return(f)
+	}
+
+	accuracy <- function(confusion) 
+	{
+  		return(confusion$overall["Accuracy"])
+	}
+
+	createFormulaName <- function(fml)
+	 {
+  		formulaName <- paste(format(fml), collapse = "")
+  		formulaName <- str_replace_all(formulaName, "[\\s]", "")
+  		return(formulaName)
+	}
+
+	evaluateModel <- function(fml, ModelBuilder, predictionColumn, trainData, testData)
+	 {
+  		formula <- createFormulaName(fml)
+  		modelBuilder <- ModelBuilder()
+  		model <- modelBuilder$model(fml, trainData)
+  		predictions <- modelBuilder$predictions(model, testData)
+  		confusion <- confusionMatrix(data = predictions, reference = testData$Survived)
+  		evaluation <- data.frame(model = modelBuilder$name, 
+                           formula = formula,
+                           accuracy = accuracy(confusion), 
+                           fmeasure = fmeasure(confusion), 
+                           stringsAsFactors=FALSE)
+ 		 return(evaluation)
+	}
+
+
+	evaluateModels <- function(formulas, ModelBuilders, predictionColumn, data, testData = NULL) {
+  		set.seed(3456)
+  		if(is.null(testData)) 
+		{
+    			trainIdx <- createDataPartition(data$Survived, p = 0.6, list = FALSE, times = 1)
+    			trainData <- data[trainIdx,]
+    			testData <- data[-trainIdx,]
+  		} else {
+    			trainData <- data
+  		}
+  
+  		evaluations <- data.frame(model = character(), 
+                            formula = character(), 
+                            accuracy = numeric(0), 
+                            fmeasure = numeric(0), 
+                            stringsAsFactors=FALSE)
+  
+  		for (ModelBuilder in ModelBuilders) {
+    			for (fml in formulas) {
+      				evaluation <- evaluateModel(fml, ModelBuilder, predictionColumn, trainData, testData)
+      				evaluations <- bind_rows(evaluations, evaluation)
+    			}
+  		}
+  	renderTable(evaluations)
+	}
+
+
+	trainIdx <- createDataPartition(train$Survived, p = 0.6, list = FALSE, times = 1)
+	trainData <- train[trainIdx,]
+	testData <- train[-trainIdx,]
+
+
+	trainData <- addSurvivalRate("Surname", trainData, trainData)
+	testData <- addSurvivalRate("Surname", testData, trainData)
+
+
+	trainData <- addSurvivalRate("Ticket", trainData, trainData)
+	testData <- addSurvivalRate("Ticket", testData, trainData)
+
+	trainData <- addSurvivalRate("FamilyID", trainData, trainData)
+	testData <- addSurvivalRate("FamilyID", testData, trainData)
+
+	trainData <- addSurvivalRate("FamilyIDWO", trainData, trainData)
+	testData <- addSurvivalRate("FamilyIDWO", testData, trainData)
+
+
+	"Creamos distintas fórmulas de combinaciones para ver cuales son las que 
+	mejor se comportan a la hora de entrenar el modelo"
+
+	formulas <- c(Survived ~ Sex,
+        	      	Survived ~ Sex + Age,
+              	Survived ~ Sex + Age + Fare,
+              	Survived ~ Sex + Age + Fare + Pclass,
+              	Survived ~ Sex + Age + Fare + Pclass + SibSp,
+              	Survived ~ Sex + Age + Fare + Pclass + SibSp + Parch,
+              	Survived ~ Sex + Age + Fare + Pclass + FamilySize,
+              	Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked,
+              	Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + Title,
+              	Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + TitleWO,
+              	Survived ~ Sex + AgeWO + Fare + Pclass + FamilySize + Embarked + TitleWO,
+              	Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO,
+              	Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild,
+              	Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother
+              	Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother + IsAlone)
+
+	models <- c(RandomForestBuilder)
+
+
+	evaluateModels(formulas, models, "Survived", trainData, testData)
+
+
+	"Evaluación basada en curvas ROC"
+
+	createPrediction <- function(fml, ModelBuilder, testData) {
+  		modelBuilder <- ModelBuilder()
+  		model <- modelBuilder$model(fml, trainData)
+  		probabilities <- modelBuilder$probabilities(model, testData)
+  		return(prediction(as.numeric(probabilities), testData$Survived))
+	}
+
+	createPerformance <- function(prediction) {
+  		return(performance(prediction, measure = "tpr", x.measure = "fpr"))
+	}
+
+	createAuc <- function(prediction) {
+  		auc <- performance(prediction, measure = "auc")
+  		return(auc@y.values[[1]])
+	}
+
+	buildModelName <- function(fml, ModelBuilder, auc) {
+  		formulaName <- createFormulaName(fml)
+  		aucName <- paste("(AUC: ", auc, ")")
+  		modelBuilder <- ModelBuilder()
+  		name <- paste0(modelBuilder$name, "\n", formulaName, "\n", aucName, "\n")
+  		return(name)
+	}
+
+	createRocPlot <- function(roc) {
+  		return(list(geom_ribbon(data = roc, aes(x=FPR, fill = Model, ymin=0, ymax=TPR), alpha = 0.2),
+              geom_line(data = roc, aes(x=FPR, y=TPR, color = Model))))
+	}
+
+	generateAllROCs <- function(formulas, ModelBuilders, trainData, testData) {
+  		rocPlots <- c()
+  		for (ModelBuilder in ModelBuilders) {
+    			for (fml in formulas) {
+      				modelBuilder <- ModelBuilder()
+      				prediction <- createPrediction(fml, ModelBuilder, testData)
+      				performance <- createPerformance(prediction)
+      				auc <- createAuc(prediction)
+      				roc <- data.frame(FPR=unlist(performance@x.values),
+                        		TPR=unlist(performance@y.values),
+                       		 Model=rep(buildModelName(fml, ModelBuilder, auc), each=length(performance@x.values)))
+     				 rocPlots <- c(rocPlots, createRocPlot(roc))
+    			}
+  		}
+  
+  		roc <- data.frame(FPR=c(0.0, 1.0),
+                 TPR=c(0.0, 1.0),
+                  Model=rep("Line of No-discrimination\n", each=2))
+  		rocPlots <- c(rocPlots, createRocPlot(roc))
+  		ggplot() + rocPlots + coord_fixed()
+	}
+
+	formulas <- c(Survived ~ Sex,
+              Survived ~ Sex + Age,
+              Survived ~ Sex + Age + Fare,
+              Survived ~ Sex + Age + Fare + Pclass,
+              Survived ~ Sex + Age + Fare + Pclass + SibSp,
+              Survived ~ Sex + Age + Fare + Pclass + SibSp + Parch,
+              Survived ~ Sex + Age + Fare + Pclass + FamilySize,
+              Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked,
+              Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + Title,
+              Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + TitleWO,
+              Survived ~ Sex + AgeWO + Fare + Pclass + FamilySize + Embarked + TitleWO,
+              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO,
+              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild,
+              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother,
+              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother + IsAlone)
+
+models <- c(RandomForestBuilder)
+
+
+	"Dado que estamos ante un problema con una clase en clara minoria, quizá basarnos
+	solo en el Acc sea muy optimista a la hora de evaluar por ello, nos basaremos también
+	en la curva ROC evitando el sesgo hacia la clase mayoritaria."
+
+	generateAllROCs(formulas, models, trainData, testData)
+
+\end{lstlisting}
+
+\pagebreak
+\clearpage
+%---------------------------------------------------

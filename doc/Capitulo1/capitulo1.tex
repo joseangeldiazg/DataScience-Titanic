@@ -1,0 +1,92 @@
+%---------------------------------------------------
+% Nombre: capitulo1.tex  
+% 
+% Texto del capitulo 1
+%---------------------------------------------------
+
+\chapter{Introducción}
+
+En este capítulo de introducción al trabajo veremos ciertos matices teóricos sobre el problema de la clasificación en minería de datos, para después abordar el problema a tratar, su organización y contenido. 
+
+\section{Introducción al problema}
+\label{contex}
+
+Vivimos en un mundo aparentemente obsesionado por etiquetar y clasificar prácticamente todo lo que nos rodea, la tarea de la clasificación nos resulta importante ya que nos permite agrupar y reaccionar ante un determinado grupo a priori clasificado de la manera más optima posible, obteniendo en la mayoría de los casos beneficio de algún tipo.
+
+La clasificación en el ámbito del aprendizaje automático no es muy distinta, al menos el el concepto general, de la clasificación en cualquier ámbito. Esta se presenta como un problema de elección de la clase o categoría que le será asignada a una nueva muestra u observación. La clasificación entra dentro del aprendizaje supervisado y en este conocemos las clases posibles que podrán ser asignadas a una observación, difiriendo en esto principalmente del aprendizaje no supervisado o técnicas de clustering en las que las muestras se agrupan en función de su similitud en clases o categorías a priori no conocidas. 
+
+El trabajo está enmarcado dentro de la asignatura \textbf{Sistemas Inteligentes para La Gestión en la Empresa} del Master Profesional en Ingeniería Informática de la UGR y aborda principalmente el problema de la la clasificación, matizando ciertos puntos con otros problemas de \textit{data science} como el preprocesado o la regresión a los datos de un problema real, que como veremos en el punto \ref{dataset} se trata de la predicción usando diversas técnicas y mejoras de estas de si una persona dada sobreviviría o no al desastre del Titanic. 
+
+\section{Problema y Dataset}
+\label{dataset}
+
+El \textit{RMS Titanic}, \cite{history} fue un transatlántico británico, que llegó a ser el barco de transporte de pasajeros más grande de la época. El Titanic, fue construido en astillero de Belfast y zarpó del puerto de Southampton el 10 de abril de 1912, tras lo cual recalaría en Cherburgo (Francia), y la antigua ciudad Queenstown (Irlanda), antes de poner rumbo Nueva York en un viaje del que jamas regresaría dado que la noche del 14 al 15 de abril, durante su viaje inaugural la colisión con un iceberg, acabo con la historia del barco y con la de 1514 desafortunados pasajeros de los 2223 que iban a bordo.  
+
+Como hemos introducido en el punto anterior el dataset utilizado ha sido el relativo a la lista de pasajeros del Titanic \cite{titanic}. Este dataset está compuesto por un listado de pasajeros del Titanic y datos relativos a estos los cuales podemos encontrar en la tabla \ref{tab_1}.
+
+\begin{table}[]
+\centering
+\begin{tabular}{cc}
+{\ul \textbf{Variable}} & {\ul \textbf{Valor}}        \\
+survival                & 0-1                         \\
+pclass                  & 1, 2 , 3                    \\
+name                    & String                      \\
+sex                     & male, female                \\
+age                     & integer                     \\
+sibsp                   & número de hijos abordo      \\
+parch                   & número de familiares abordo \\
+ticket                  & Numero ticket               \\
+fare                    & precio ticket               \\
+cabin                   & Cabina                      \\
+embarked                & Puerto                     
+\end{tabular}
+\caption{Variables del dataset.}
+\label{tab_1}
+\end{table}
+
+El dataset está compuesto por 891 muestras para el training y 418 muestras de test en este último lote de ejemplos tendremos suprimida la variable \textit{survived}, la cual es la variable objetivo para nuestras predicciones.  
+
+\section{Herramientas y objetivos}
+
+En esta sección veremos una breve introducción a las herramientas usadas para el desarrollo de la práctica así como de los principales objetivos que se buscan conseguir con el desarrollo de la misma. 
+
+\subsection{Hardware}
+
+\begin{table}[H]
+	\begin{center}
+		\begin{tabular}{cc} \toprule
+		Elemento & Características \\ \midrule
+		Procesador & 2,6 GHz Intel Core i5 \\
+		Memoria Ram &  8 GB 1600 MHz DDR3 \\
+		Disco duro & SATA SSD de 120 GB\\ \bottomrule
+		\end{tabular}
+	\end{center}
+\caption{Especificaciones técnicas de la máquina usada.}
+\label{ord_personal}
+\end{table}
+
+\subsection{Software}
+
+El software utilizado es en su práctica totalidad software libre, siendo el restante software propietario cuyas licencias vienen incluidas en el sistema operativo de la máquina usada siendo este OS X "Sierra". El software usado es:
+
+\begin{itemize}
+	\item \textbf{RStudio}\cite{rstudio}: Entorno de trabajo para R.
+	\item \textbf{TeXShop}, procesador de textos basado en \textit{Latex} usado para elaborar la documentación del presente proyecto.
+\end{itemize}
+
+\subsection{Objetivos}
+
+Los objetivos de este trabajo podrían resumirse en los siguientes:
+
+\begin{itemize}
+	\item Obtener un modelo predictivo binario fiable que dado un nuevo pasajero X con sus características dadas,  sea capaz de predecir si habría sobrevivido o no al desastre del Titanic. 
+	\item Aumentar el accuracy de nuestro sistema de manera que podamos subir posiciones en la competición relativa en Kaggle \cite{kaggle}. 
+	\item Comprender y estudiar las distintas técnicas de minería de datos vistas en la asignatura. 
+\end{itemize}
+
+\section{Organización del trabajo} 
+
+La organización del presente documento, se centra en detallar cada uno de los pasos seguidos durante el estudio y resolución del problema planteado en esta introducción. En primera instancia, encontramos en el capítulo \ref{1} un estudio explorativo y estadístico del dataset, continuaremos con modelos simples basados en reglas y en predicciones realizadas a simple vista con el conocimiento extraido de la exploración para continuar con modelos avanzados de clasificación en el capítulo \ref{clasificacion} y finalizar con vías futuras y una tabla resumen con los resultados del proceso experimental en el anexo \ref{anexo}.
+
+\clearpage
+%---------------------------------------------------

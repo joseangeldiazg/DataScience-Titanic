@@ -1,0 +1,85 @@
+%?????????????????????????
+% Nombre: capitulo4.tex  
+% 
+% Texto del capitulo 4
+%---------------------------------------------------
+
+\chapter{Técnicas fallidas}
+
+En esta sección se hace un estudio de dos técnicas más de minería de datos cuyos resultados concluyeron que de cara al problema que nos incumbe no aportaban información suficiente (al menos al nivel estudiado) y por tanto fueron abandonadas y retiradas del grueso del trabajo general. 
+
+\section{Reglas de asociación}
+
+Con el fin de poder mejorar los resultados obtenidos en \ref{forest}, se llevó a cabo un experimento de aplicación de reglas de asociación sobre el conjunto de entrenamiento para ver si podemos obtener algunas reglas interesantes cuyo consecuente sea \textit{\textbf{Vive}} o \textit{\textbf{Muere}}, y con las cuales podamos afinar nuestro proceso de aprendizaje. 
+
+Para aplicar esto, de nuevo usamos Knime y el flujo que podemos ver en la figura \ref{fig_reglas}. Podemos notar, como hay un metanodo, denominado \textit{ReplaceNode} que aglutina cuatro nodos de \textit{RuleEngine} que realizan transformaciones en los datos para no tener que usar diccionarios externos y poder obtener reglas de asociación entendibles fácilmente. Estas reglas podemos verlas en las figuras \ref{r1}, \ref{r2}, \ref{r3} y \ref{r4}. 
+
+\begin{figure}
+	\centering
+		\includegraphics[scale=0.6]{./Capitulo4/imagenes/ar.png}
+		\caption{Flujo de Knime para reglas de asociación.}
+	\label{fig_reglas}
+\end{figure}
+
+\begin{figure}
+	\centering
+		\includegraphics[scale=0.7]{./Capitulo4/imagenes/r1.png}
+		\caption{Regla para categorizar Fare.}
+	\label{r1}
+\end{figure}
+
+\begin{figure}
+	\centering
+		\includegraphics[scale=0.7]{./Capitulo4/imagenes/r2.png}
+		\caption{Regla para categorizar FamilySize.}
+	\label{r2}
+\end{figure}
+
+\begin{figure}
+	\centering
+		\includegraphics[scale=0.7]{./Capitulo4/imagenes/r3.png}
+		\caption{Regla para categorizar Survived.}
+	\label{r3}
+\end{figure}
+
+\begin{figure}
+	\centering
+		\includegraphics[scale=0.7]{./Capitulo4/imagenes/r4.png}
+		\caption{Regla para categorizar Pclass.}
+	\label{r4}
+\end{figure}
+
+
+También se hace uso de un nodo RuleBasedFilter para quedarnos solo con las reglas que tienen en el consecuente \textit{\textbf{Vive}} o \textit{\textbf{Muere}} y de esta manera poder estudiar mejor el problema que nos incumbe. Tras la ejecución del anterior flujo, obtenemos multitud de reglas de asociación, pero todas las que tienen niveles de confianza aceptables tienen que ver con \textit{\textbf{vive si se es mujer}}. Algo que ya sabíamos a priori, por lo que a un nivel de confianza y soporte confiable, las reglas de asociación no nos aportan nada que no hubiéramos aportado ya al problema en anteriores pasos por lo que este método será descartado. 
+
+\begin{figure}
+	\centering
+		\includegraphics[scale=0.4]{./Capitulo4/imagenes/reglas.png}
+		\caption{Reglas obtenidas.}
+	\label{reglas}
+\end{figure}
+
+
+\section{Oversampling}
+
+Si atendemos a la imagen , podemos ver que la distribución de clases en el problema estudiado está bastante desequilibrada teniendo casi el doble de muestras de la clase \textit{survived=0} frente a la clase \textit{survived=1}. Esto puede hacer que nuestros clasificadores ofrezcan cierto sesgo hacia la clase mayoritaria, frente a la minoritaria y en nuestro caso donde como hemos podido comprobar, el error en la clase \textit{survived=0}  es menor que en la \textit{survived=1} , sería menester eliminar este sesgo y comenzar a clasificar bien muestras de supervivientes para mejorar los resultados alcanzados tras nuestro proceso de clasificación. 
+
+Para favorecer esto, una técnica comúnmente usada es la denominada como \textit{oversampling} \cite{over} que crea muestras ficticias de la clase minoritaria para igualarlas frente a la mayoritaria y así eliminar el sesgo anteriormente mencionado. Knime incluye una de estas técnicas, concretamente la que hace uso del algoritmo \textbf{SMOTE}.
+
+Por tanto, haremos uso del flujo en Knime que vemos en la figura \ref{fig_smote} para añadir nuevas muestras al conjunto de entrenamiento inicial, tras lo cual pasaremos de nuevo a R, para aplicarle las técnicas que describimos en el punto \ref{1}.
+
+
+\begin{figure}[h]
+	\centering
+		\includegraphics[scale=0.7]{./Capitulo4/imagenes/1.png}
+		\caption{Flujo en Knime para aplicar oversampling.}
+	\label{fig_smote}
+\end{figure} 
+
+Una vez aplicado de nuevo el algoritmo RandomForest visto en \ref{forest} y subir los datos a Kaggle para su evaluación con el conjunto de test podemos comprobar que el resultado no es el esperado sino que se empeora respecto a lo entregado anteriormente. Tras un análisis de lo que ha ocurrido y porque no mejoramos el accuracy del sistema, podemos concluir en la siguiente explicación:
+
+El algoritmo \textbf{SMOTE}, crea muestras ficticias en función de los datos de los que disponemos y les asigna la clase minoritaria hasta igualarlos. Notemos como tenemos un listado de pasajeros de los cuales la mayoría no sobreviven al accidente, y en base a datos cuyo valor es survived=0, se crean nuevas muestras con esos datos (que como hemos dicho corresponden a survived=0 en su mayoría) y se les asigna la clase survived=1, previa combinación de atributos. En este problema concreto donde tenemos una gran influencia del factor aleatorio, este método no hace por tanto otra cosa que confundir al algoritmo clasificador, por lo que esta técnica se desechó. 
+
+\pagebreak
+\clearpage
+%---------------------------------------------------
