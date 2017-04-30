@@ -7,34 +7,29 @@
 \chapter{ANEXO I}
 \label{anexo}
 
-En este Anexo, podemos encontrar la tabla con los resultados obtenidos en las distintas entregas a Kaggle, el número de resultados no coincide al 100\% con los subidos a Kaggle, dado que a petición del profesor de teoría, Francisco Herrera, se realizó una batería de experimentos sobre el problema con el algoritmo XGBoost, tras lo cual solo alguna de estas entregas con el algoritmo fueron incluidas a la tabla final. 
-
-
-% Please add the following required packages to your document preamble:
-% \usepackage{graphicx}
-% \usepackage[normalem]{ulem}
-% \useunder{\uline}{\ul}{}
 \begin{table}[]
 \centering
-\caption{My caption}
-\label{my-label}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{|l|l|l|l|l|l|}
 \hline
 \multicolumn{1}{|c|}{{\ul \textit{\textbf{Sol}}}} & \multicolumn{1}{c|}{{\ul \textit{\textbf{Preprocesado}}}} & {\ul \textit{\textbf{Algoritmos}}} & {\ul \textit{\textbf{Acc Test}}} & {\ul \textit{\textbf{Acc Training}}} & {\ul \textit{\textbf{Pos}}} \\ \hline
-1 & Ninguno & Asumimos todos mueren & 0.61 & 0.616 & 6429 \\ \hline
-2 & Ninguno & \begin{tabular}[c]{@{}l@{}}Asumimos que solo\\ viven las mujeres\end{tabular} & 0.7655 & 0.7867 & 4781 \\ \hline
-3 & Ninguno & \begin{tabular}[c]{@{}l@{}}Todos los hombres y \\ las mujeres de tercera \\ clase con \textgreater20 de Fare\\ mueren, las demás viven.\end{tabular} & 0.77990 & 0.8080 & 2877 \\ \hline
-4 & Creada variable isChild & \begin{tabular}[c]{@{}l@{}}Ademas de lo anterior,\\ niños de 2 clase viven.\end{tabular} & 0.78600 & 0.8181 & 3259 \\ \hline
- &  &  &  &  &  \\ \hline
- &  &  &  &  &  \\ \hline
- &  &  &  &  &  \\ \hline
-9 & \begin{tabular}[c]{@{}l@{}}Añadidas nuevas características\\ Eliminado outliers, eliminados \\ valores perdidos\end{tabular} & Random Forest & 0.82297 & 0.88431 & 218 \\ \hline
- &  &  &  &  &  \\ \hline
+1 & Imputados valores perdidos & Asumimos todos mueren & 0.61 & 0.616 & 6429 \\ \hline
+2 & Imputados valores perdidos & \begin{tabular}[c]{@{}l@{}}Asumimos que solo\\ viven las mujeres\end{tabular} & 0.7655 & 0.7867 & 4781 \\ \hline
+3 & Imputados valores perdidos & \begin{tabular}[c]{@{}l@{}}Todos los hombres y \\ las mujeres de tercera \\ clase con \textgreater20 de Fare\\ mueren, las demás viven.\end{tabular} & 0.77990 & 0.8080 & 3259 \\ \hline
+4 & \begin{tabular}[c]{@{}l@{}}Imputados valores perdidos\\ Creada variable isChild\end{tabular} & \begin{tabular}[c]{@{}l@{}}Ademas de lo anterior,\\ niños de 2 clase viven.\end{tabular} & 0.78240 & 0.8181 & 2877 \\ \hline
+5 & Imputados valores perdidos & \begin{tabular}[c]{@{}l@{}}Random Forest nativo\\ de R\end{tabular} & 0.78469 & 0.8316 & 2543 \\ \hline
+6 & \begin{tabular}[c]{@{}l@{}}Imputados valores perdidos \\ añadidas variable Title, isMother,\\ isChild\end{tabular} & \begin{tabular}[c]{@{}l@{}}Random Forest nativo\\ de R\end{tabular} & 0.78469 & 0.8316 & 2543 \\ \hline
+7 & \begin{tabular}[c]{@{}l@{}}Imputados valores perdidos,\\ añadida variable Title\end{tabular} & Random Forest rparty & 0.79904 & 0.838 & 1732 \\ \hline
+8 & \begin{tabular}[c]{@{}l@{}}Imputados valores perdidos,\\ añadida variable Title,\\ eliminados outliers\end{tabular} & Random Forest rparty & 0.80383 & 0.8432 & 936 \\ \hline
+9 & \begin{tabular}[c]{@{}l@{}}Imputados valores perdidos, \\ añadidas title, familysize y familyID,\end{tabular} & Random Forest rparty & 0.8134 & 0.8356 & 473 \\ \hline
+10 & \begin{tabular}[c]{@{}l@{}}Añadidas nuevas características\\ Eliminado outliers, imputados \\ valores perdidos\end{tabular} & \begin{tabular}[c]{@{}l@{}}Random Forest muy \\ ajustado y probado con\\ distintos parámetros\\ quedándonos con el mejor\\ en training\end{tabular} & 0.82297 & 0.88431 & 218 \\ \hline
 \end{tabular}%
 }
+\caption{Tabla de resultados}
+\label{resultados}
 \end{table}
 
+En este Anexo, podemos encontrar la tabla con los resultados obtenidos en las distintas entregas a Kaggle, el número de resultados no coincide al 100\% con los subidos a Kaggle, dado que a petición del profesor de teoría, Francisco Herrera, se realizó una batería de experimentos sobre el problema con el algoritmo XGBoost. Los resultados de estos experimentos fueron obviados del problema ya que no ofrecían mejora alguna sobre los resultados. 
 
 \pagebreak
 

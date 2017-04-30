@@ -17,12 +17,14 @@ En este capítulo final se estudian los resultados obtenidos a lo largo del traba
 	\item Es interesante mencionar como el aplicar un sencillo proceso de estudio de los datos en origen y ver si podemos obtener nuevas características ocultas de esto, realizando un minado sobre los datos originales, puede conseguir que nuestro sistema se comporte mucho mejor que usando simplemente el algoritmo de clasificación más potente que conozcamos.  
 	
 	\item Según hemos visto en los gráficos que nos ofrecen información acerca de como el \textbf{RandomForest} se comporta según va realizando el aprendizaje, la variable que hemos creado en la sección de ingeniería de características, \textbf{Title}, es la que más influye en la hora de hacer que nuestro resultado sea mejor y discernir entre si se sobrevive o no al desastre. La conclusión que llegamos con esto es que en esta época, el título estaba por encima de la clase o el dinero pagado, además esta variable es una variable muy importante que aglutina en un solo factor información acerca del Sexo y la clase. 
-
+	
+	\item Aunque a priori no hay outliers o ruido en el problema, hemos comprobado como realizando una unión de los valores que salen de lo normal por su media, obtenemos mejores resultados. Respecto al ruido, como hemos comentado en la sección de XGBoost, hay cierto concepto de ruido entre características e instancias que debería ser mejorado para que este algoritmo funcionara mejor. 
+	
 \end{itemize}
 
 \section{Vías futuras}
 
-Pese a obtener grandes resultados, estos podrían mejorarse aún más. Por ejemplo, aplicando algún estudio más exhaustivo al problema podríamos generar nuevas variables como una que especifique si la persona era miembro de la tripulación o no. Otras opciones que a ciencia cierta mejorarían los resultados, serían la aplicación de técnicas de Boosting que tengan en cuenta algún clasificador más que los arboles de decisión. 
+El estudio llevado a cabo es uno de los mas exhaustivos vistos sobre el problema. Aúna las partes importantes de los dos mejores tutoríales para este problema y sinceramente es complicado obtener mejores resultados. Como vías futuras cabria la posibilidad de usar algoritmos evolutivos que nos ayuden en el proceso de selección de características evitando así posiblemente los ruidos que hacen que el algoritmo XGBoost no se comporte como debe. Por otro lado, cabría la posibilidad también de ajustar este algoritmo usando técnicas de oversampling para equilibrar las clases, ya que está constatada en la literatura la potencia de union de ambos algoritmos. 
 
 \pagebreak
 \clearpage

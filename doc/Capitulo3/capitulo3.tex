@@ -231,12 +231,22 @@ Para poder seguir subiendo posiciones en la competición nos centraremos por tant
 
 Algunas salidas interesantes del anterior código podría ser la que podemos ver en la figura \ref{split}, que corresponde con la función \textbf{\textit{varImpPlot(fit)}} en ella podemos comprobar como las variables de nuestro árbol de decisión se comportan y hacen aumentar el Accuracy de este a medida que este avanza su entrenamiento. Esto es útil para ver que variables son realmente importantes en nuestro proceso de entrenamiento y en ella hemos podido comprobar como a pesar de lo que pensábamos en puntos anteriores las variables \textbf{IsMother} e \textbf{IsChild}, no ofrecerán mucho de cara a entrenar el modelo si lo comparamos con la variable \textbf{Title} por ejemplo que es la que más afecta. 
 
-\begin{figure}[h]
+\begin{figure}[H]
 	\centering
-		\includegraphics[scale=0.7]{./Capitulo3/imagenes/split.png}
+		\includegraphics[scale=0.5]{./Capitulo3/imagenes/split.png}
 		\caption{Comportamiento variables en el RandomForest.}
 	\label{split}
 \end{figure} 
+
+Por otro lado, un factor importante en RandomForest, es discernir entre el valor de mTry, es decir, las variables que serán tomadas en cuenta en el proceso iterativo de generación de árboles con aleatoriedad, por ello en las primeras líneas del script anterior realizamos un entrenamiento para ver como aumenta el error en función del valor que tome esta variable, el resultado de este, lo encontramos en la figura \ref{errormtry}. En ella podemos ver como el valor optimo estará entre 1 y 3.
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.5]{./Capitulo3/imagenes/error.png}
+		\caption{Obtencion del valor mtry.}
+	\label{errormtry}
+\end{figure} 
+ 
 
 De la manera que hemos visto en esta sección, podremos construir modelos muy útiles, de hecho, hemos llegado a obtener el valor de 0.8134, pero aun estos valores se pueden mejorar. Para ello, construiremos modelos avanzados y con parámetros muy afinados del algoritmo RandomForest, siguiendo el tutorial de  Marcio Gualtieri \cite{marcio}. 
 
@@ -422,6 +432,15 @@ En esta sección veremos un modelo avanzado de RandomForest y obtendremos el resu
 	}
 
 
+	"Hacemos particiones del conjunto de train para entrenar con el. Nos quedaremos 
+	con el 60% para entrenar y el 40% restante para comprobar que tal va nuestro modelo.
+	Podríamos usar el test de Kaggle, pero para evaluar este y saber como funciona en 
+	nuestro modelo deberíamos subir los resultados a kaggle lo que no sería apropiado. 
+	Por lo tanto entrenaremos nuestro modelo con este conjunto de test proveniente del 
+	training y cuando lo tengamos ajustado y veamos cual ofrece un buen resultado 
+	aplicaremos el modelo al test real y evaluaremos en kaggle. "
+
+
 	trainIdx <- createDataPartition(train$Survived, p = 0.6, list = FALSE, times = 1)
 	trainData <- train[trainIdx,]
 	testData <- train[-trainIdx,]
@@ -442,27 +461,31 @@ En esta sección veremos un modelo avanzado de RandomForest y obtendremos el resu
 
 
 	"Creamos distintas fórmulas de combinaciones para ver cuales son las que 
-	mejor se comportan a la hora de entrenar el modelo"
+	mejor se comportan a la hora de entrenar el modelo."
 
 	formulas <- c(Survived ~ Sex,
-        	      	Survived ~ Sex + Age,
-              	Survived ~ Sex + Age + Fare,
-              	Survived ~ Sex + Age + Fare + Pclass,
-              	Survived ~ Sex + Age + Fare + Pclass + SibSp,
-              	Survived ~ Sex + Age + Fare + Pclass + SibSp + Parch,
-              	Survived ~ Sex + Age + Fare + Pclass + FamilySize,
-              	Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked,
-              	Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + Title,
-              	Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + TitleWO,
-              	Survived ~ Sex + AgeWO + Fare + Pclass + FamilySize + Embarked + TitleWO,
-              	Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO,
-              	Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild,
-              	Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother
-              	Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother + IsAlone)
-
-	models <- c(RandomForestBuilder)
+              Survived ~ Sex + Age,
+              Survived ~ Sex + Age + Fare,
+              Survived ~ Sex + Age + Fare + Pclass,
+              Survived ~ Sex + Age + Fare + Pclass + SibSp,
+              Survived ~ Sex + Age + Fare + Pclass + SibSp + Parch,
+              Survived ~ Sex + Age + Fare + Pclass + FamilySize,
+              Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked,
+              Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + Title,
+              Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + TitleWO,
+              Survived ~ Sex + AgeWO + Fare + Pclass + FamilySize + Embarked + TitleWO,
+              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO,
+              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild,
+              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother,
+              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother + IsAlone)
 
 
+	"Añadimos aun array los modelos que serán comparados."
+	
+	models <- c(RandomForestBuilder, ConditionalInferenceBuilder)
+
+	"Evaluamos los modelos"
+	
 	evaluateModels(formulas, models, "Survived", trainData, testData)
 
 
@@ -519,32 +542,113 @@ En esta sección veremos un modelo avanzado de RandomForest y obtendremos el resu
   		ggplot() + rocPlots + coord_fixed()
 	}
 
-	formulas <- c(Survived ~ Sex,
-              Survived ~ Sex + Age,
-              Survived ~ Sex + Age + Fare,
-              Survived ~ Sex + Age + Fare + Pclass,
-              Survived ~ Sex + Age + Fare + Pclass + SibSp,
-              Survived ~ Sex + Age + Fare + Pclass + SibSp + Parch,
-              Survived ~ Sex + Age + Fare + Pclass + FamilySize,
-              Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked,
-              Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + Title,
-              Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + TitleWO,
-              Survived ~ Sex + AgeWO + Fare + Pclass + FamilySize + Embarked + TitleWO,
-              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO,
-              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild,
-              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother,
-              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother + IsAlone)
 
-models <- c(RandomForestBuilder)
-
-
-	"Dado que estamos ante un problema con una clase en clara minoria, quizá basarnos
+	"Dado que estamos ante un problema con una clase en clara minoría, quizá basarnos
 	solo en el Acc sea muy optimista a la hora de evaluar por ello, nos basaremos también
 	en la curva ROC evitando el sesgo hacia la clase mayoritaria."
 
 	generateAllROCs(formulas, models, trainData, testData)
 
 \end{lstlisting}
+
+Merece la pena pararse a explicar ciertos puntos del anterior código. En primera instancia, estamos generando constructores para los distintos clasificadores que usaremos, RandomForest normal y ConditionalInference concretamente. También implementaremos un método que implementa cross validation para evitar los problemas de \textit{overfitting}. 
+
+Una vez dividido el conjunto de training en dos, para poder evaluar sobre este el modelo, definimos en la variable fórmulas cada una de las posibles combinaciones de variables en nuestro problema. También, seleccionamos los modelos a construir y los añadimos al array \textbf{modelos}. Una vez hecho esto, podremos ejecutar, tras lo cual, nuestra función renderiza en HTML la tabla que podemos ver en la figura \ref{fig_resultados}.
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.4]{./Capitulo3/imagenes/resultados.png}
+		\caption{Resultados de la evaluación.}
+	\label{fig_resultados}
+\end{figure} 
+
+Si nos fijamos en ella, los resultados obtenidos por el modelo basado en RandomForest normal ofrece resultados significativamente superiores al del constructor basado en \textit{conditional inference}. Por otro lado, las formulas que parecen comportarse mejor son las dos más completas, barajando también las variables básicas sin outliers. 
+
+Por otro lado, a modo de experimento se han comprobado también los resultados con un valor de mTry distinto de 1, y los resultados usando los valores de 2 y 3 para este parámetro son casi iguales aunque ligeramente peor, lo que corrobora lo visto en la figura \ref{errormtry}.
+
+
+Para finalizar esta sección, como hemos explicado antes, al tener una clase en minoría, puede ser que tengamos cierto problema de overfitting, por ello, para evaluar verazmente en casos como estos, podemos usar el \textbf{AUC}, o área bajo la curva ROC.  En el anterior script también se implementan los métodos para ello y los resultados podemos verlos en la siguientes imágenes. 
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.4]{./Capitulo3/imagenes/cf.png}
+		\caption{Curvas Roc para conditional inference.}
+	\label{cf}
+\end{figure} 
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.4]{./Capitulo3/imagenes/rf.png}
+		\caption{Curvas Roc para RandomForest.}
+	\label{rf}
+\end{figure} 
+
+
+Respecto a las curvas Roc, los resultados son ligeramente superiores que la evaluación basada en Accuracy, pero tampoco nos dan mucha más información que la que ya tendríamos, por lo que en base a nuestros experimentos, la formula ganadora será:
+
+\textit{\textbf{RandomForest + Survived~Sex+AgeWO+ FareWO
+ +Pclass+ FamilySize+Embarked +TitleWO+
+ IsChild+IsMother+IsAlone}} 
+
+Si entrenamos el modelo con este paso y evitamos el overfitting, usando el constructor de \textit{cross validation}, llegaremos a la puntuación de 0.82 en test. El código final de evaluación, se ha omitido de la memoria ya que no es relevante de cara al estudio pero puede encontrarse tanto en gitHub como en el script en Kaggle, el cual, puede ejecutarse en la propia plataforma de manera muy sencilla. 
+
+
+\section{XGBoost}
+\label{boosting}
+
+Pese a que los resultados obtenidos en la sección anterior son buenos, hemos realizado un estudio del problema usando el algoritmo XGBoost en cual se sitúa en el estado del arte dentro de los problemas de clasificación actuales y  es propicio a obtener grandes resultados. El paquete usado es \textbf{xgboost} y el pequeño script podemos verlo a continuación. 
+
+\begin{lstlisting}
+
+	labels<- trainOriginal[,2]
+	labels <- as.numeric(labels)
+
+	"Para que Xgboost funcione debemos dummificar las variables."
+	
+	feature_selection <- function(data) 
+	{
+  		selected <- c('SibSp', 'Parch', 'Sex', 'Age', 'Fare', 'Pclass', 'Embarked')
+  		newdata <- data[,selected]
+  		newdata$SibSp <- as.numeric(newdata$SibSp)
+  		newdata$Parch <- as.numeric(newdata$Parch)
+  		newdata$Age <- as.numeric(newdata$Age)
+  		newdata$Age[is.na(newdata$Age)] <- 0
+  		newdata$Sex <- as.character(newdata$Sex)
+  		newdata$Sex[newdata$Sex == 'male'] <- 1
+  		newdata$Sex[newdata$Sex == 'female'] <- 0
+  		newdata$Sex <- as.numeric(newdata$Sex)
+  		newdata$Fare <- as.numeric(newdata$Fare)
+  		newdata$Fare[is.na(newdata$Fare)] <- 0
+  		newdata$Pclass <- as.numeric(newdata$Pclass)
+  		newdata$Embarked <- as.character(newdata$Embarked)
+  		newdata$Embarked[(newdata$Embarked == 'S')] = 0
+  		newdata$Embarked[(newdata$Embarked == '')] = 0
+  		newdata$Embarked[(newdata$Embarked == 'C')] = 1
+  		newdata$Embarked[(newdata$Embarked == 'Q')] = 2
+  		newdata$Embarked <- as.numeric(as.character(newdata$Embarked))
+  		newdata <- as.matrix(newdata)
+  		return(newdata)
+	}
+
+	ml <- xgboost(data = feature_selection(trainOriginal), label = labels, 
+              nfold = 5, nrounds = 10, objective = "binary:logistic")
+
+	pred <- predict(ml, feature_selection(testOriginal))
+	pred[pred > .7] <- 1
+	pred[pred <= .7] <- 0
+
+	# Output in csv for submission
+	submission <- data.frame(PassengerId = testOriginal$PassengerId, Survived = pred)
+	
+	#Con probabilidad 0.7 ->acc= 0.77512
+
+\end{lstlisting}
+
+El script anterior es sencillo, pero los resultados que ofrece no son los mejores ya que por un lado las variables que usa xgboost, deben ser \textit{dummificadas} y el proceso que usamos para ello, quizá no sea el mejor. 
+
+Por otro lado, cabe destacar como aumentando la probabilidad de morir, es decir, no dejando en 0.5 el discernir cuando un ejemplo morirá o vivirá sino haciendo mas probable la muerte, ofrece mejores resultados. 
+
+Por último, destacar que este algoritmo es muy sensible al ruido entre variables, es decir, clases etiquetadas de manera distinta con variables muy parecidas, problema muy acentuado en este dataset debido a que al ser datos de un desastre naval real, el sobrevivir o no, aparte de unas pequeñas reglas como las mujeres o los niños, no seguía un orden especifico sino que por duro que parezca era fruto del azar, por lo que este ruido está presente lo que hace que el XGBoost no sea el mejor algoritmo para este problema. 
 
 \pagebreak
 \clearpage

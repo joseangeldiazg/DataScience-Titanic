@@ -689,7 +689,7 @@ test <- all[all$PassengerId %in% test$PassengerId, ]
 "Creamos constructores para cada uno de los métodos que usaremos."
 
 RandomForestBuilder <- function() {
-  mtry = 1
+  mtry = 3
   
   name = paste("Random Forest (randomForest) mtry:", mtry)
   
@@ -847,6 +847,14 @@ evaluateModels <- function(formulas, ModelBuilders, predictionColumn, data, test
 }
 
 
+"Hacemos particiones del conjunto de train para entrenar con el. Nos quedaremos 
+con el 60% para entrenar y el 40% restante para comprobar que tal va nuestro modelo.
+Podríamos usar el test de Kaggle, pero para evaluar este y saber como funciona en 
+nuestro modelo deberíamos subir los resultados a kaggle lo que no sería apropiado. 
+Por lo tanto entrenaremos nuestro modelo con este conjunto de test proveniente del 
+training y cuando lo tengamos ajustado y veamos cual ofrece un buen resultado 
+aplicaremos el modelo al test real y evaluaremos en kaggle. "
+
 trainIdx <- createDataPartition(train$Survived, p = 0.6, list = FALSE, times = 1)
 trainData <- train[trainIdx,]
 testData <- train[-trainIdx,]
@@ -882,19 +890,17 @@ formulas <- c(Survived ~ Sex,
               Survived ~ Sex + AgeWO + Fare + Pclass + FamilySize + Embarked + TitleWO,
               Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO,
               Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild,
-              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother
+              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother,
               Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother + IsAlone)
 
-models <- c(RandomForestBuilder)
+models <- c(ConditionalInferenceBuilder)
 
 
-evaluateModel( Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother,
-               RandomForestBuilder, "Survived", trainData, testData)
+"evaluateModel( Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother,
+               RandomForestBuilder, "Survived", trainData, testData)"
 
 
 evaluateModels(formulas, models, "Survived", trainData, testData)
-
-
 
 
 "Evaluación basada en curvas ROC"
@@ -950,23 +956,6 @@ generateAllROCs <- function(formulas, ModelBuilders, trainData, testData) {
   ggplot() + rocPlots + coord_fixed()
 }
 
-formulas <- c(Survived ~ Sex,
-              Survived ~ Sex + Age,
-              Survived ~ Sex + Age + Fare,
-              Survived ~ Sex + Age + Fare + Pclass,
-              Survived ~ Sex + Age + Fare + Pclass + SibSp,
-              Survived ~ Sex + Age + Fare + Pclass + SibSp + Parch,
-              Survived ~ Sex + Age + Fare + Pclass + FamilySize,
-              Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked,
-              Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + Title,
-              Survived ~ Sex + Age + Fare + Pclass + FamilySize + Embarked + TitleWO,
-              Survived ~ Sex + AgeWO + Fare + Pclass + FamilySize + Embarked + TitleWO,
-              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO,
-              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild,
-              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother,
-              Survived ~ Sex + AgeWO + FareWO + Pclass + FamilySize + Embarked + TitleWO + IsChild + IsMother + IsAlone)
-
-models <- c(RandomForestBuilder)
 
 
 "Dado que estamos ante un problema con una clase en clara minoria, quizá basarnos
@@ -974,6 +963,7 @@ solo en el Acc sea muy optimista a la hora de evaluar por ello, nos basaremos ta
 en la curva ROC evitando el sesgo hacia la clase mayoritaria."
 
 generateAllROCs(formulas, models, trainData, testData)
+
 
 "EVALUACIÓN TEST"
 
